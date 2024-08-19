@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>hydroflow.ico</file>
+        <file>hydroflow.gif</file>
+        <file>search.ico</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,7 @@
+{
+  "python.analysis.extraPaths": [
+    "D:\\QGIS\\apps\\grass\\grass83\\etc\\python",
+    "D:\\QGIS\\apps\\qgis-ltr\\python",
+    "D:\\QGIS\\apps\\Python312"
+  ]
+}

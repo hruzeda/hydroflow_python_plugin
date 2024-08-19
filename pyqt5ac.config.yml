@@ -1,0 +1,11 @@
+ioPaths:
+  -
+    - "hydroflow_dialog_base.ui"
+    - "hydroflow_dialog_base_ui.py"
+  -
+    - "resources.qrc"
+    - "resources_rc.py"
+
+uic_options: --from-imports
+init_package: True
+force: False
