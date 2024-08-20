@@ -10,7 +10,7 @@ class Segment:
         self.setId = -1
         self.a: Optional[Vertex] = None
         self.b: Optional[Vertex] = None
-        self.isExit = False
+        self.isMouth = False
 
     def getSmallerX(self, tolerance: float) -> float:
         return self.a.x if self.a.x + tolerance < self.b.x else self.b.x

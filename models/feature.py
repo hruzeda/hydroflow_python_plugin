@@ -7,8 +7,8 @@ class Feature:
         self,
         id=-1,
         setId=-1,
-        outletFeatureId=-1,
-        feature_type=0,
+        mouthFeatureId=-1,
+        featureType=0,
         partCount=0,
         flow=0,
         strahler=0,
@@ -20,8 +20,8 @@ class Feature:
     ):
         self.id = id
         self.setId = setId
-        self.outletFeatureId = outletFeatureId
-        self.feature_type = feature_type
+        self.mouthFeatureId = mouthFeatureId
+        self.featureType = featureType
         self.partCount = partCount
         self.flow = flow
         self.strahler = strahler

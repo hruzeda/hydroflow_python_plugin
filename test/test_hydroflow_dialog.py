@@ -8,9 +8,9 @@
 
 """
 
-__author__ = 'hruzeda@gmail.com'
-__date__ = '2024-08-07'
-__copyright__ = 'Copyright 2024, Henrique Uzêda'
+__author__ = "hruzeda@gmail.com"
+__date__ = "2024-08-07"
+__copyright__ = "Copyright 2024, Henrique Uzêda"
 
 import unittest
 
@@ -19,6 +19,7 @@ from qgis.PyQt.QtGui import QDialogButtonBox, QDialog
 from hydroflow_dialog import HydroflowDialog
 
 from utilities import get_qgis_app
+
 QGIS_APP = get_qgis_app()
 
 
@@ -48,8 +49,8 @@ class HydroflowDialogTest(unittest.TestCase):
         result = self.dialog.result()
         self.assertEqual(result, QDialog.Rejected)
 
+
 if __name__ == "__main__":
     suite = unittest.makeSuite(HydroflowDialogTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
-

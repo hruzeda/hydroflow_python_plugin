@@ -47,7 +47,7 @@ class Classificator:
         # Verificando a existência de relações topológicas inesperadas (toque e interseção).
         if self.topologicalRelations.haErros():
             # Listando os eventos estranhos.
-            self.topologicalRelations.listarEventosInesperados(self.log)
+            self.topologicalRelations.reportUnexpectedRelations(self.log)
             result = 5
         else:
             # Classificando a bacia hidrográfica.
@@ -89,7 +89,7 @@ class Classificator:
                 previousIteration = iteratorLine
 
             # Inserir segmento(s) no ponto de varredura.
-            self.iterator.inserirPontoVarredura(lv)
+            self.iterator.addIteratorPoint(lv)
 
             # Processando o evento da linha de varredura.
             if lv.eventType == 0:  # Extremo esquerdo. Segmento entrando.
@@ -225,19 +225,19 @@ class Classificator:
                 for i in range(iteratorPoint.getQuantidadeSegmentos() - 1):
                     for j in range(i + 1, iteratorPoint.getQuantidadeSegmentos()):
                         if test.at(i) and test.at(j):  # Encosta.
-                            self.topologicalRelations.inserirRelacao(
+                            self.topologicalRelations.addRelation(
                                 iteratorPoint.getSegmento(i),
                                 iteratorPoint.getSegmento(j),
                                 0,
                             )
                         elif test.at(i) or test.at(j):  # Toca.
-                            self.topologicalRelations.inserirRelacao(
+                            self.topologicalRelations.addRelation(
                                 iteratorPoint.getSegmento(i),
                                 iteratorPoint.getSegmento(j),
                                 1,
                             )
                         else:  # Intercepta.
-                            self.topologicalRelations.inserirRelacao(
+                            self.topologicalRelations.addRelation(
                                 iteratorPoint.getSegmento(i),
                                 iteratorPoint.getSegmento(j),
                                 2,
@@ -263,7 +263,7 @@ class Classificator:
 
         if self.topologicalRelations.getQuantidadeFozes() > 0:
             # Montando os índices dos eventos.
-            self.topologicalRelations.montarIndices()
+            self.topologicalRelations.buildIndexes()
 
             # Construindo a árvore que representa cada bacia.
             entrypointRelation = 0
@@ -346,9 +346,8 @@ class Classificator:
 
                 # Obtendo os filhos.
                 parentID = -1 if parent.getIdConjunto() == 1 else parent.getIdFeicao()
-                newParent = 0  # O novo pai é o segmento atual!
-                childSegments = self.topologicalRelations.getFilhosNo(
-                    segment.getIdFeicao(), parentID, sibling_nodes, newParent
+                childSegments = self.topologicalRelations.findChildSegments(
+                    segment.getIdFeicao(), parentID, sibling_nodes
                 )
 
                 # Classificando o nó.

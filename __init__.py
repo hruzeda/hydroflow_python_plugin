@@ -33,4 +33,5 @@ def classFactory(iface):  # pylint: disable=invalid-name  NOSONAR
     """
     #
     from .hydroflow import Hydroflow
+
     return Hydroflow(iface)

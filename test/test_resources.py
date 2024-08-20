@@ -8,17 +8,16 @@
 
 """
 
-__author__ = 'hruzeda@gmail.com'
-__date__ = '2024-08-07'
-__copyright__ = 'Copyright 2024, Henrique Uzêda'
+__author__ = "hruzeda@gmail.com"
+__date__ = "2024-08-07"
+__copyright__ = "Copyright 2024, Henrique Uzêda"
 
 import unittest
 
 from qgis.PyQt.QtGui import QIcon
 
 
-
-class HydroflowDialogTest(unittest.TestCase):
+class HydroflowResourcesTest(unittest.TestCase):
     """Test rerources work."""
 
     def setUp(self):
@@ -31,9 +30,10 @@ class HydroflowDialogTest(unittest.TestCase):
 
     def test_icon_png(self):
         """Test we can click OK."""
-        path = ':/plugins/Hydroflow/hydroflow.ico'
+        path = ":/plugins/Hydroflow/hydroflow.ico"
         icon = QIcon(path)
         self.assertFalse(icon.isNull())
+
 
 if __name__ == "__main__":
     suite = unittest.makeSuite(HydroflowResourcesTest)

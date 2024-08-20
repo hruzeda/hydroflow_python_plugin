@@ -21,6 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+
 import os.path
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
@@ -48,11 +49,10 @@ class Hydroflow:
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'Hydroflow_{}.qm'.format(locale))
+            self.plugin_dir, "i18n", "Hydroflow_{}.qm".format(locale)
+        )
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -61,7 +61,7 @@ class Hydroflow:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&Hydroflow')
+        self.menu = self.tr("&Hydroflow")
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -80,8 +80,7 @@ class Hydroflow:
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('Hydroflow', message)
-
+        return QCoreApplication.translate("Hydroflow", message)
 
     def add_action(
         self,
@@ -93,7 +92,8 @@ class Hydroflow:
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None,
+    ):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -149,9 +149,7 @@ class Hydroflow:
             self.iface.addToolBarIcon(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
+            self.iface.addPluginToMenu(self.menu, action)
 
         self.actions.append(action)
 
@@ -160,25 +158,22 @@ class Hydroflow:
     def initGui(self):  # NOSONAR
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':hydroflow.ico'
+        icon_path = ":hydroflow.ico"
         self.add_action(
             icon_path,
-            text=self.tr(u'Run Hydroflow'),
+            text=self.tr("Run Hydroflow"),
             callback=self.run,
-            parent=self.iface.mainWindow())
+            parent=self.iface.mainWindow(),
+        )
 
         # will be set False in run()
         self.first_start = True
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&Hydroflow'),
-                action)
+            self.iface.removePluginMenu(self.tr("&Hydroflow"), action)
             self.iface.removeToolBarIcon(action)
-
 
     def run(self):
         """Run method that performs all the real work"""

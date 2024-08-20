@@ -183,28 +183,16 @@ clean:
 	@echo "------------------------------------"
 	rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
 
-pylint:
+lint:
 	@echo
-	@echo "-----------------"
-	@echo "Pylint violations"
-	@echo "-----------------"
-	@pylint --reports=n --rcfile=pylintrc . || true
-	@echo
-	@echo "----------------------"
-	@echo "If you get a 'no module named qgis.core' error, try sourcing"
-	@echo "the helper script we have provided first then run make pylint."
-	@echo "e.g. source run-env-linux.sh <path to qgis install>; make pylint"
-	@echo "----------------------"
+	@echo "------------------------------------"
+	@echo "Running ruff check command with --fix"
+	@echo "------------------------------------"
+	ruff check --fix --config pyproject.toml
 
-
-# Run pep8 style checking
-#http://pypi.python.org/pypi/pep8
-pep8:
+format:
 	@echo
-	@echo "-----------"
-	@echo "PEP8 issues"
-	@echo "-----------"
-	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude $(PEP8EXCLUDE) . || true
-	@echo "-----------"
-	@echo "Ignored in PEP8 check:"
-	@echo $(PEP8EXCLUDE)
+	@echo "------------------------------------"
+	@echo "Running ruff format command"
+	@echo "------------------------------------"
+	ruff format --config pyproject.toml

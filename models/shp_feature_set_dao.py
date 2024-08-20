@@ -65,7 +65,7 @@ class SHPFeatureSetDAO:
                     feature_object = Feature(
                         id=feature.id(),
                         setId=shapeType,
-                        feature_type=geometry.wkbType(),
+                        featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
                     )
                     features.append(feature_object)
@@ -83,7 +83,7 @@ class SHPFeatureSetDAO:
                     feature_object = Feature(
                         id=feature.id(),
                         setId=shapeType,
-                        feature_type=geometry.wkbType(),
+                        featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
                     )
                     feature_object.setProcessar(False)
@@ -94,7 +94,7 @@ class SHPFeatureSetDAO:
                     feature_object = Feature(
                         id=feature.id(),
                         setId=shapeType,
-                        feature_type=geometry.wkbType(),
+                        featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
                     )
                 features.append(feature_object)

@@ -62,7 +62,9 @@ class Ui_HydroflowDialogBase(object):
         self.pushButton_Lim.setGeometry(QtCore.QRect(400, 28, 30, 28))
         self.pushButton_Lim.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":search.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(
+            QtGui.QPixmap(":search.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off
+        )
         self.pushButton_Lim.setIcon(icon)
         self.pushButton_Lim.setObjectName("pushButton_Lim")
         self.groupBox = QtWidgets.QGroupBox(HydroflowDialogBase)
@@ -127,10 +129,14 @@ class Ui_HydroflowDialogBase(object):
 
     def retranslateUi(self, HydroflowDialogBase):
         _translate = QtCore.QCoreApplication.translate
-        HydroflowDialogBase.setWindowTitle(_translate("HydroflowDialogBase", "Hydroflow"))
+        HydroflowDialogBase.setWindowTitle(
+            _translate("HydroflowDialogBase", "Hydroflow")
+        )
         self.pushButton_Close.setText(_translate("HydroflowDialogBase", "Fechar"))
         self.pushButton_Exec.setText(_translate("HydroflowDialogBase", "Executar"))
-        self.groupBox_Lim.setTitle(_translate("HydroflowDialogBase", " Limite da área "))
+        self.groupBox_Lim.setTitle(
+            _translate("HydroflowDialogBase", " Limite da área ")
+        )
         self.groupBox.setTitle(_translate("HydroflowDialogBase", " Opções "))
         self.label.setText(_translate("HydroflowDialogBase", "Unidade do mapa:"))
         self.comboBox.setItemText(0, _translate("HydroflowDialogBase", "Metros"))
@@ -139,9 +145,18 @@ class Ui_HydroflowDialogBase(object):
         self.comboBox.setItemText(3, _translate("HydroflowDialogBase", "Outro"))
         self.label_2.setText(_translate("HydroflowDialogBase", "Tolerância XY:"))
         self.label_3.setText(_translate("HydroflowDialogBase", "Inferir:"))
-        self.checkBox_Strahler.setText(_translate("HydroflowDialogBase", "Ordens por Strahler"))
-        self.checkBox_Shreve.setText(_translate("HydroflowDialogBase", "Ordens por Shreve"))
-        self.checkBox_FlowOnly.setText(_translate("HydroflowDialogBase", "Somente fluxos"))
-        self.groupBox_HidLn.setTitle(_translate("HydroflowDialogBase", " Rede de drenagem "))
+        self.checkBox_Strahler.setText(
+            _translate("HydroflowDialogBase", "Ordens por Strahler")
+        )
+        self.checkBox_Shreve.setText(
+            _translate("HydroflowDialogBase", "Ordens por Shreve")
+        )
+        self.checkBox_FlowOnly.setText(
+            _translate("HydroflowDialogBase", "Somente fluxos")
+        )
+        self.groupBox_HidLn.setTitle(
+            _translate("HydroflowDialogBase", " Rede de drenagem ")
+        )
+
 
 from . import resources_rc  # noqa: E402, F401

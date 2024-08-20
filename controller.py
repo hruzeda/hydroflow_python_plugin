@@ -93,8 +93,8 @@ class Controller:
 
         # Verificando se há mensagens no log.
         # if log.hasMessages():
-            # formLog = FrmLog(params.origem, log)
-            # formLog.exibirLog()
+        # formLog = FrmLog(params.origem, log)
+        # formLog.exibirLog()
 
         # Apagando os objetos.
         classificator.limparHydroflow()
