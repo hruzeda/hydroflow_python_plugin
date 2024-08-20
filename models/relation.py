@@ -1,3 +1,3 @@
 class Relation:
-    def __init__(self, exit):
-        self.exit = exit
+    def __init__(self, log):
+        self.log = log

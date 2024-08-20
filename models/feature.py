@@ -1,3 +1,7 @@
+from models.segment import Segment
+from models.vertex import Vertex
+
+
 class Feature:
     def __init__(
         self,
@@ -9,9 +13,7 @@ class Feature:
         flow=0,
         strahler=0,
         shreve=0,
-        vertexCount=0,
         vertex_list=None,
-        segmentCount=0,
         segments_list=None,
         process=True,
         hasObservation=False,
@@ -24,9 +26,16 @@ class Feature:
         self.flow = flow
         self.strahler = strahler
         self.shreve = shreve
-        self.vertexCount = vertexCount
-        self.vertex_list = vertex_list or []
-        self.segmentCount = segmentCount
-        self.segments_list = segments_list or []
+        self.vertex_list: list[Vertex] = vertex_list or []
+        self.segments_list: list[Segment] = segments_list or []
         self.process = process
         self.hasObservation = hasObservation
+
+    def setClassification(self, flow: int, strahler: int, shreve: int):
+        self.flow = flow
+        self.strahler = strahler
+        self.shreve = shreve
+
+    def cleanup(self):
+        self.vertex_list = []
+        self.segments_list = []

@@ -19,6 +19,7 @@ from models.attribute import Attribute
 from models.feature import Feature
 from models.feature_set import FeatureSet
 from models.observation import Observation
+from models.params import Params
 from models.vertex import Vertex
 
 
@@ -65,7 +66,6 @@ class SHPFeatureSetDAO:
                         id=feature.id(),
                         setId=shapeType,
                         feature_type=geometry.wkbType(),
-                        vertexCount=len(vertex_list),
                         vertex_list=vertex_list,
                     )
                     features.append(feature_object)
@@ -84,7 +84,6 @@ class SHPFeatureSetDAO:
                         id=feature.id(),
                         setId=shapeType,
                         feature_type=geometry.wkbType(),
-                        vertexCount=1,
                         vertex_list=vertex_list,
                     )
                     feature_object.setProcessar(False)
@@ -96,14 +95,13 @@ class SHPFeatureSetDAO:
                         id=feature.id(),
                         setId=shapeType,
                         feature_type=geometry.wkbType(),
-                        vertexCount=len(vertex_list),
                         vertex_list=vertex_list,
                     )
                 features.append(feature_object)
 
         # Set the attributes for the figura (ConjuntoFeicao object)
-        feature_set.setFeicoes(features)
-        feature_set.setObservacoes(obs)
+        feature_set.featuresList = features
+        feature_set.obs = obs
 
         return feature_set
 
@@ -250,15 +248,15 @@ class SHPFeatureSetDAO:
         shpLayer.dataProvider().addFeature(feature)
         shpLayer.updateExtents()
 
-    def saveFeatureSet(self, shapeObject, params):
+    def saveFeatureSet(self, featureSet: FeatureSet, params: Params) -> None:
         shp_layer = QgsVectorLayer(params.getNomeNovoArquivo(), "New Layer", "ogr")
         if not shp_layer.isValid():
             print("Error opening new SHP layer")
             return
 
         # Write existing features
-        for i in range(shapeObject.getQuantidadeFeicoes()):
-            feature = shapeObject.getFeicao(i)
+        for i in range(featureSet.getQuantidadeFeicoes()):
+            feature = featureSet.getFeicao(i)
             self.saveRecord(
                 feature,
                 shp_layer,
@@ -269,16 +267,16 @@ class SHPFeatureSetDAO:
             )
 
         # Write new features
-        for j in range(shapeObject.getQuantidadeFeicoesNovas()):
-            feature = shapeObject.getFeicaoNova(j)
-            attributes = shapeObject.getAtributosFeicaoNova(feature.getId())
+        for j in range(featureSet.getQuantidadeFeicoesNovas()):
+            feature = featureSet.getFeicaoNova(j)
+            attributes = featureSet.getNewFeatureAttributes(feature.getId())
             self.saveRecord(
                 feature,
                 shp_layer,
                 params.getTipoOrdemStrahler(),
                 params.getEOrdemShreve(),
                 attributes,
-                shapeObject.getQuantidadeAtributos(),
+                featureSet.getQuantidadeAtributos(),
             )
 
         shp_layer.updateExtents()

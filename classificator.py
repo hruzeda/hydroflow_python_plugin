@@ -1,15 +1,22 @@
 from typing import Optional
+
 from models.feature_set import FeatureSet
-from models.iterator import Iterator, IteratorItem
+from models.iterator import Iterator, IteratorRow
+from models.node import Node
 from models.params import Params
 from models.position import Position
 from models.relation import Relation
-from models.node import Node
 from utils.geometry import Geometry
 
 
 class Classificator:
-    def __init__(self, drainage: Optional[FeatureSet], boundary: Optional[FeatureSet], params: Params, log) -> None:
+    def __init__(
+        self,
+        drainage: Optional[FeatureSet],
+        boundary: Optional[FeatureSet],
+        params: Params,
+        log,
+    ) -> None:
         self.drainage = drainage
         self.boundary = boundary
         self.params = params
@@ -52,14 +59,10 @@ class Classificator:
         return result
 
     def buildIterator(self) -> None:
-        self.iterator.setLinhas(
-            self.drainage.getFeicoes(), self.drainage.getQuantidadeFeicoes()
-        )
-        self.iterator.setLinhas(self.drainage.getFeicoesNovas())
-        self.iterator.setLinhas(
-            self.boundary.getFeicoes(), self.boundary.getQuantidadeFeicoes()
-        )
-        self.iterator.ordenarLinhas()
+        self.iterator.addRows(self.drainage.featuresList)
+        self.iterator.addRows(self.drainage.newFeaturesList, True)
+        self.iterator.addRows(self.boundary.featuresList)
+        self.iterator.sortRows()
 
     def iteratePlane(self) -> None:
         record = 0
@@ -80,7 +83,7 @@ class Classificator:
             record = lv.segmentA
 
             # Verificando se mudou a linha de varredura.
-            if self.geo.seMenor(previousIteration, iteratorLine):
+            if self.geo.smallerThan(previousIteration, iteratorLine):
                 # Processando a linha de varredura anterior.
                 self.processIteratorPoints(previousIteration)
                 previousIteration = iteratorLine
@@ -119,10 +122,10 @@ class Classificator:
             elif lv.getTipoEvento() == 2:  # Interseção.
                 # Separando interseção por toque.
                 if (
-                    not self.geo.seIguais(lv.point, lv.segmentA.getA())
-                    and not self.geo.seIguais(lv.point, lv.segmentA.getB())
-                    and not self.geo.seIguais(lv.point, lv.segmentB.getA())
-                    and not self.geo.seIguais(lv.point, lv.segmentB.getB())
+                    not self.geo.equalsTo(lv.point, lv.segmentA.getA())
+                    and not self.geo.equalsTo(lv.point, lv.segmentA.getB())
+                    and not self.geo.equalsTo(lv.point, lv.segmentB.getA())
+                    and not self.geo.equalsTo(lv.point, lv.segmentB.getB())
                 ):
                     # Localizando os segmentos.
                     index_A = self.position.localizar(iteratorLine, lv.segmentA)
@@ -165,25 +168,25 @@ class Classificator:
                 # Separando as interseções do tipo encosta.
                 if not (
                     (
-                        self.geo.seIguais(intersectionPoint, above.getA())
-                        and self.geo.seIguais(intersectionPoint, below.getB())
+                        self.geo.equalsTo(intersectionPoint, above.getA())
+                        and self.geo.equalsTo(intersectionPoint, below.getB())
                     )
                     or (
-                        self.geo.seIguais(intersectionPoint, above.getB())
-                        and self.geo.seIguais(intersectionPoint, below.getA())
+                        self.geo.equalsTo(intersectionPoint, above.getB())
+                        and self.geo.equalsTo(intersectionPoint, below.getA())
                     )
                     or (
-                        self.geo.seIguais(intersectionPoint, above.getA())
-                        and self.geo.seIguais(intersectionPoint, below.getA())
+                        self.geo.equalsTo(intersectionPoint, above.getA())
+                        and self.geo.equalsTo(intersectionPoint, below.getA())
                     )
                     or (
-                        self.geo.seIguais(intersectionPoint, above.getB())
-                        and self.geo.seIguais(intersectionPoint, below.getB())
+                        self.geo.equalsTo(intersectionPoint, above.getB())
+                        and self.geo.equalsTo(intersectionPoint, below.getB())
                     )
                 ):
                     # Inserindo a interseção na lista de varredura.
                     self.iterator.inserir(
-                        IteratorItem(intersectionPoint, 2, [above, below])
+                        IteratorRow(intersectionPoint, 2, [above, below])
                     )
 
     def processIteratorPoints(self, iteratorLine):
@@ -203,14 +206,14 @@ class Classificator:
                     segment = iteratorPoint.getSegmento(k)
                     test.append(
                         (
-                            self.geo.seIguais(point, segment.getA())
+                            self.geo.equalsTo(point, segment.getA())
                             and (
                                 segment.getA().eExtremo()
                                 or segment.getIdConjunto() == 1
                             )
                         )
                         or (
-                            self.geo.seIguais(point, segment.getB())
+                            self.geo.equalsTo(point, segment.getB())
                             and (
                                 segment.getB().eExtremo()
                                 or segment.getIdConjunto() == 1
@@ -421,7 +424,7 @@ class Classificator:
 
                 # Gravando classificação.
                 if result == 0:
-                    self.drainage.setClassificacaoFeicao(
+                    self.drainage.setFeatureClassification(
                         node.getIdFeicao(),
                         node.getFluxo(),
                         node.getStrahler(),
@@ -473,8 +476,8 @@ class Classificator:
         msg_3 = "Feicao nao processada."
         feature = 0
 
-        for i in range(self.drainage.getTotalFeicoes()):
-            feature = self.drainage.getFeicao(i)
+        for i in range(self.drainage.getTotalFeatures()):
+            feature = self.drainage.getFeature(i)
             if (
                 feature.getFluxo() == 0
                 or (
