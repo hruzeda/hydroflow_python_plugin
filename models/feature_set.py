@@ -2,6 +2,7 @@ from typing import Optional
 
 from models.attribute import Attribute
 from models.feature import Feature
+from models.new_feature_attribute import NewFeatureAttribute
 
 
 class FeatureSet:
@@ -11,7 +12,7 @@ class FeatureSet:
         self.typeCode = typeCode
         self.featuresList: list[Feature] = []
         self.newFeaturesList: list[Feature] = []
-        self.newFeaturesAttributes: list[Attribute] = []
+        self.newFeaturesAttributes: list[NewFeatureAttribute] = []
         self.obs = None
 
     def getFeature(self, featureId: int) -> Optional[Feature]:
@@ -56,13 +57,12 @@ class FeatureSet:
             self.obs.cleanup()
         self.obs = None
 
-    def getNewFeatureAttributes(self, featureId: int) -> Attribute:
-        attrs = None
+    def getNewFeatureAttributes(self, featureId: int) -> Optional[Attribute]:
         index = self.findAttributeIndex(0, self.quantidadeFeicoesNovas - 1, featureId)
         if index != -1:
-            reg = self.atributosFeicoesNovas[index]
-            attrs = reg.getAtributos()
-        return attrs
+            reg = self.newFeaturesAttributes[index]
+            return reg.attribute
+        return None
 
     def findAttributeIndex(self, start: int, end: int, featureId: int) -> int:
         resposta = -1
@@ -74,9 +74,9 @@ class FeatureSet:
             reg = self.newFeaturesAttributes[center]
 
             # Analisando.
-            if featureId == reg.getIdFeicao():
+            if featureId == reg.featureId:
                 resposta = center
-            elif featureId < reg.getIdFeicao():
+            elif featureId < reg.featureId:
                 if center > start:
                     resposta = self.findAttributeIndex(start, center - 1, featureId)
             else:  # (idElemento > reg.getIdElemento)

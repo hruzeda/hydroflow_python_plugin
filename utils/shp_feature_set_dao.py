@@ -10,6 +10,7 @@ from qgis.core import (
     QgsFields,
     QgsGeometry,
     QgsPointXY,
+    QgsProject,
     QgsVectorFileWriter,
     QgsVectorLayer,
     QgsWkbTypes,
@@ -19,6 +20,7 @@ from models.attribute import Attribute
 from models.feature import Feature
 from models.feature_set import FeatureSet
 from models.observation import Observation
+from models.segment import Segment
 from models.vertex import Vertex
 from params import Params
 
@@ -47,19 +49,70 @@ class SHPFeatureSetDAO:
         msg_3 = "Feição não processada."
 
         # Iterate over features (feicoes)
-        for feature in layer.getFeatures():
+        for featureIndex, feature in enumerate(layer.getFeatures()):
             geometry = feature.geometry()
             if geometry.isMultipart():
                 # Handle multipart geometries
-                parts = (
-                    geometry.asMultiPolygon()
-                    if geometry.type() == QgsWkbTypes.PolygonGeometry
-                    else geometry.asMultiLineString()
-                )
-                for part in parts:
+                p = 0
+                for part in geometry.parts():
                     vertex_list = []
-                    for point in part:
-                        vertex_list.append(Vertex(x=point.x(), y=point.y()))
+                    for pointIndex, point in enumerate(part.vertices()):
+                        vertex_list.append(
+                            Vertex(
+                                id=p,
+                                x=point.x(),
+                                y=point.y(),
+                                last=pointIndex == len(part.vertices()) - 1,
+                            )
+                        )
+                        p += 1
+
+                    segments_list = []
+                    for i in range(len(vertex_list) - 1):
+                        vertexA = vertex_list[i]
+                        vertexB = vertex_list[i + 1]
+
+                        if vertexA.x + self.tolerancia < vertexB.x:
+                            segments_list.append(
+                                Segment(
+                                    id=len(segments_list),
+                                    featureId=featureIndex,
+                                    setId=shapeType,
+                                    a=vertexA,
+                                    b=vertexB,
+                                )
+                            )
+                        elif vertexB.x + self.tolerancia < vertexA.x:
+                            segments_list.append(
+                                Segment(
+                                    id=len(segments_list),
+                                    featureId=featureIndex,
+                                    setId=shapeType,
+                                    a=vertexB,
+                                    b=vertexA,
+                                )
+                            )
+                        else:  # Vertical
+                            if vertexA.y + self.tolerancia < vertexB.y:
+                                segments_list.append(  # NOSONAR
+                                    Segment(
+                                        id=len(segments_list),
+                                        featureId=featureIndex,
+                                        setId=shapeType,
+                                        a=vertexA,
+                                        b=vertexB,
+                                    )
+                                )
+                            else:
+                                segments_list.append(  # NOSONAR
+                                    Segment(
+                                        id=len(segments_list),
+                                        featureId=featureIndex,
+                                        setId=shapeType,
+                                        a=vertexB,
+                                        b=vertexA,
+                                    )
+                                )
 
                     # Create and store the Feicao object
                     feature_object = Feature(
@@ -67,12 +120,12 @@ class SHPFeatureSetDAO:
                         setId=shapeType,
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
+                        segments_list=segments_list,
                     )
                     features.append(feature_object)
 
-                    if len(parts) > 1:
-                        feature_object.setTemObservacao(True)
-                        obs.setObservacao(feature.id(), msg_1)
+                    feature_object.hasObservation = True
+                    obs.setObservacao(feature.id(), msg_1)
             else:
                 # Handle singlepart geometries
                 vertex_list = [
@@ -85,10 +138,17 @@ class SHPFeatureSetDAO:
                         setId=shapeType,
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
+                        segments_list=[
+                            Segment(
+                                id=0,
+                                featureId=featureIndex,
+                                setId=shapeType,
+                                a=vertex_list[0],
+                                b=vertex_list[0],
+                                isMouth=True,
+                            )
+                        ],
                     )
-                    feature_object.setProcessar(False)
-                    feature_object.setTemObservacao(True)
-                    obs.setObservacao(feature.id(), msg_3)
                 else:
                     # Handle normal geometries
                     feature_object = Feature(
@@ -97,6 +157,9 @@ class SHPFeatureSetDAO:
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
                     )
+                feature_object.process = False
+                feature_object.hasObservation = True
+                obs.set_value(feature.id(), msg_3)
                 features.append(feature_object)
 
         # Set the attributes for the figura (ConjuntoFeicao object)
@@ -106,7 +169,7 @@ class SHPFeatureSetDAO:
         return feature_set
 
     # Function to read attributes from a QgsVectorLayer feature
-    def readAttributes(self, layer, feature_id):
+    def readAttributes(self, layer: QgsVectorLayer, feature_id: int) -> list[Attribute]:
         feature = next(layer.getFeatures(QgsFeatureRequest(feature_id)))
         attributes = []
 
@@ -133,7 +196,7 @@ class SHPFeatureSetDAO:
 
         return attributes
 
-    def createFeatureSet(self, fileName, geometryType):
+    def createFeatureSet(self, fileName: str, geometryType: QgsWkbTypes):
         # Define the geometry type
         geometry_type_map = {
             QgsWkbTypes.PointGeometry: "Point",
@@ -142,7 +205,7 @@ class SHPFeatureSetDAO:
         }
 
         geometryType = geometry_type_map.get(geometryType, None)
-        if geometryType is None:
+        if not geometryType:
             return None
 
         # Create an empty SHP file with the specified geometry type
@@ -213,75 +276,72 @@ class SHPFeatureSetDAO:
 
     def saveRecord(
         self,
-        origFeature,
-        shpLayer,
-        strahler,
-        shreve,
-        attributes,
-        numAttributes,
+        origFeature: Feature,
+        shpLayer: QgsVectorLayer,
+        strahler: int,
+        shreve: bool,
+        attributes: Optional[list[Attribute]],
     ):
         # Create a new feature
         feature = QgsFeature(shpLayer.fields())
 
         # Set the geometry of the feature
         geometry = QgsGeometry.fromPolylineXY(
-            [QgsPointXY(v.getX(), v.getY()) for v in origFeature.getVertices()]
+            [QgsPointXY(v.x, v.y) for v in origFeature.vertex_list]
         )
         feature.setGeometry(geometry)
 
         # Set the attributes
-        if attributes and numAttributes > 0:
-            for i, atributo in enumerate(attributes):
-                feature.setAttribute(i, atributo.getValor())
+        if attributes and len(attributes) > 0:
+            for i, attr in enumerate(attributes):
+                feature.setAttribute(i, attr.attr_value)
 
         # Set the fluxo attribute
-        feature.setAttribute("Fluxo", origFeature.getFluxo())
+        feature.setAttribute("Fluxo", origFeature.flow)
 
         # Set additional attributes like Strahler and Shreve
         if strahler > 0:
-            feature.setAttribute("Strahler", origFeature.getStrahler())
+            feature.setAttribute("Strahler", origFeature.strahler)
 
         if shreve:
-            feature.setAttribute("Shreve", origFeature.getShreve())
+            feature.setAttribute("Shreve", origFeature.shreve)
 
         # Add the feature to the layer
         shpLayer.dataProvider().addFeature(feature)
         shpLayer.updateExtents()
 
     def saveFeatureSet(self, featureSet: FeatureSet, params: Params) -> None:
-        shp_layer = QgsVectorLayer(params.getNomeNovoArquivo(), "New Layer", "ogr")
-        if not shp_layer.isValid():
-            print("Error opening new SHP layer")
-            return
+        self.createFeatureSet(params.getNomeNovoArquivo(), QgsWkbTypes.PolygonGeometry)
+        shp_layer = QgsVectorLayer(
+            params.getNomeNovoArquivo(), "Hydroflow Results", "ogr"
+        )
 
         # Write existing features
-        for i in range(featureSet.getQuantidadeFeicoes()):
-            feature = featureSet.getFeicao(i)
+        for feature in featureSet.featuresList:
             self.saveRecord(
                 feature,
                 shp_layer,
-                params.getTipoOrdemStrahler(),
-                params.getEOrdemShreve(),
+                params.strahlerOrderType,
+                params.shreveOrderEnabled,
                 None,
-                0,
             )
 
         # Write new features
-        for j in range(featureSet.getQuantidadeFeicoesNovas()):
-            feature = featureSet.getFeicaoNova(j)
+        for feature in featureSet.newFeaturesList:
             attributes = featureSet.getNewFeatureAttributes(feature.getId())
             self.saveRecord(
                 feature,
                 shp_layer,
-                params.getTipoOrdemStrahler(),
-                params.getEOrdemShreve(),
+                params.strahlerOrderType,
+                params.shreveOrderEnabled,
                 attributes,
-                featureSet.getQuantidadeAtributos(),
             )
 
         shp_layer.updateExtents()
+        self.copyConfigFiles(params.getNomeArquivo(), params.getNomeNovoArquivo())
+        QgsProject.instance().addMapLayer(shp_layer)
 
-    def copyConfigFiles(self, fileName, newFileName):
+    def copyConfigFiles(self, fileName: str, newFileName: str):
         original_path = Path(fileName).parent
         new_path = Path(newFileName).parent
 

@@ -45,7 +45,7 @@ class IteratorPoint:
             item = self.segments[middle]
 
             # Comparando os segmentos.
-            comp = segment.compararSegmentos(item)
+            comp = segment.compareTo(item)
 
             # Segmento menor que item central.
             if comp < 0:
@@ -113,7 +113,7 @@ class Iterator:
         return 1 if a.eventType == b.eventType else -1
 
     def iteratorRowComparator(self, iteratorRow: float, point: Vertex):
-        if point.naLinhaDeVarredura(iteratorRow, self.geo.tolerance):
+        if point.withinIteratorRow(iteratorRow, self.geo.tolerance):
             if self.geo.smallerThan(iteratorRow, point.x):
                 return -1
             return 1

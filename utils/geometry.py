@@ -19,11 +19,24 @@ class Geometry:
         aX: Optional[float] = None,
         bX: Optional[float] = None,
     ):
+        """
+        Aplicação da equação reduzida da circunferência.
+        Considerções:
+             Vertice "a" é o centro da circunferência;
+             Vertice "b" é o elemento em análise.
+        Resposta:
+             Verdadeiro se o vertice "b" está contido na circunferência com centro
+             no vertice "a" e raio igual a tolerância.
+        """
         if a and b:
             return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) <= self.tolerance
         return abs(aX - bX) <= self.tolerance
 
     def intersection(self, primeiro: Segment, segundo: Segment) -> Optional[Vertex]:
+        """
+        Retorna valor booleano, indicando se existe ou não interseção entre
+        os segmentos. Caso exista, o ponto de interseção e passado em "I".
+        """
         # Calculando s e t;
         denon = (segundo.b.x - segundo.a.x) * (primeiro.b.y - primeiro.a.y) - (
             segundo.b.y - segundo.a.y
@@ -46,3 +59,31 @@ class Geometry:
                 y = primeiro.a.y + (s * (primeiro.b.y - primeiro.a.y))
                 return Vertex(x, y)
         return None
+
+    def calculateRelativePoint(self, x: float, segment: Segment) -> Vertex:
+        p = None
+        a = segment.a
+        b = segment.b
+
+        # o segmento é vertical. Retorna o vértice com o menor "y"!
+        if segment.isVertical(self.tolerance) or a.withinIteratorRow(x, self.tolerance):
+            p = Vertex(a.x, a.y)
+        else:  # o segmento não é vertical.
+            if b.withinIteratorRow(
+                x, self.tolerance
+            ):  # A linha de varredura "x" intercepta o vértice "b".
+                p = Vertex(b.x, b.y)
+            else:
+                """
+                Calculando o ponto relativo.
+                Para a.x < b.x
+                double dx = b.x - a.x;
+                double dy = b.y - a.y;
+                double  t = (x - a.x) / dx;
+                y = (t * dy) + p.x;
+                ou
+                y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
+                """
+                y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y
+                p = Vertex(x, y)
+        return p

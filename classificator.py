@@ -23,7 +23,7 @@ class Classificator:
         self.drainage = drainage
         self.boundary = boundary
         self.params = params
-        self.geo = Geometry(params.getToleranciaXY())
+        self.geo = Geometry(params.toleranceXY)
         self.iterator = Iterator(self.geo)
         self.topologicalRelations = Relation(log)
         self.position = Position(self.geo, log)
@@ -114,7 +114,7 @@ class Classificator:
                     self.evaluateSegments(lv.point, record, below)
             elif lv.eventType == 1:
                 # Localizando o segmento em Posicao.
-                index_A = self.position.localizar(iteratorLine, record)
+                index_A = self.position.locate(iteratorLine, record)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.acima(index_A)
@@ -125,7 +125,7 @@ class Classificator:
                         self.evaluateSegments(lv.point, above, below)
 
                 # Excluindo de posição.
-                self.position.excluir(index_A)
+                self.position.delete(index_A)
             elif lv.eventType == 2:  # Interseção.
                 # Separando interseção por toque.
                 if (
@@ -135,8 +135,8 @@ class Classificator:
                     and not self.geo.equalsTo(lv.point, lv.segmentB.b)
                 ):
                     # Localizando os segmentos.
-                    index_A = self.position.localizar(iteratorLine, lv.segmentA)
-                    index_B = self.position.localizar(iteratorLine, lv.segmentB)
+                    index_A = self.position.locate(iteratorLine, lv.segmentA)
+                    index_B = self.position.locate(iteratorLine, lv.segmentB)
 
                     # Trocando segmentos de posição .
                     self.position.trocar(index_A, index_B)
@@ -212,11 +212,11 @@ class Classificator:
                     test.append(
                         (
                             self.geo.equalsTo(point, segment.a)
-                            and (segment.a.eExtremo() or segment.setId == 1)
+                            and (segment.a.isExtremity() or segment.setId == 1)
                         )
                         or (
                             self.geo.equalsTo(point, segment.b)
-                            and (segment.b.eExtremo() or segment.setId == 1)
+                            and (segment.b.isExtremity() or segment.setId == 1)
                         )
                     )
 
@@ -331,7 +331,7 @@ class Classificator:
                         node.flow = 1  # Manter!
                 else:  # Segmento único.
                     # Verificando se o vértice "a" do segmento encosta no pai.
-                    if segment.a.eIgual(parent.a) or segment.a.eIgual(parent.b):
+                    if segment.a.equalsTo(parent.a) or segment.a.equalsTo(parent.b):
                         if segment.a.id == 0:
                             node.flow = 2  # Inverter!
                         else:
@@ -374,11 +374,11 @@ class Classificator:
 
                         # Classificando por Strahler. Passar essa lógica para No::inserirFilhoNo()!
                         if self.params.strahlerOrderType > 0:
-                            node.setStrahler(childNode.getStrahler())
+                            node.setStrahler(childNode.strahler)
 
                         # //Classificando por Shreve. Passar essa lógica para No::inserirFilhoNo()!
                         if self.params.shreveOrderEnabled:
-                            node.setShreve(childNode.getShreve())
+                            node.setShreve(childNode.shreve)
                 else:  # Nó com dois ou mais filhos.
                     if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
                         # Gravando a mensagem de mais de três afluentes no log.
@@ -480,7 +480,7 @@ class Classificator:
                 msg_0 = msg_1 + str(feature.id) + msg_2
                 self.log.append(msg_0)
                 self.drainage.obs = (feature.id, msg_3)
-                feature.setTemObservacao(True)
+                feature.hasObservation = True
                 result = 1
 
         return result

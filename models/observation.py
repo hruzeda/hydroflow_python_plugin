@@ -8,13 +8,13 @@ class Observation:
     def __init__(self):
         self.list = []
 
-    def get_value(self, featureId):
+    def get_value(self, featureId: int) -> str:
         for item in self.list:
             if item.featureId == featureId:
                 return item.texto
         return ""
 
-    def set_value(self, featureId, text):
+    def set_value(self, featureId: int, text: str) -> None:
         found = False
         if len(self.list) > 0:
             for pos in range(len(self.list)):
