@@ -1,16 +1,13 @@
-from typing import Optional
-
 from ..utils.message import Message
-from .feature import Feature
 from .segment import Segment
 
 
 class RelationItem:
     def __init__(
         self,
-        source: Optional[Segment] = None,
-        destination: Optional[Segment] = None,
-        relationType: Optional[int] = 0,
+        source: Segment,
+        destination: Segment,
+        relationType: int,
     ):
         self.source = source
         self.destination = destination
@@ -18,8 +15,8 @@ class RelationItem:
 
 
 class IndexItem:
-    def __init__(self, feature: Feature, value: int):
-        self.feature = feature
+    def __init__(self, featureId: int, value: int):
+        self.featureId = featureId
         self.value = value
 
 
@@ -65,7 +62,7 @@ class Relation:
 
             # (item < itemMeio)
             if comparison == -1:
-                if start == end or start == middle:  # (inicio == fim) Não encontrou.
+                if start in (middle, end):  # (inicio == fim) Não encontrou.
                     # Inserir no ponteiro atual(meio).
                     if relation_type == 0:
                         self.items.insert(middle, item)
@@ -101,22 +98,20 @@ class Relation:
                             middle + 1, end, source, destination, relation_type
                         )
 
-    def addMouth(self, basin: Segment, boundary: Segment) -> None:
+    def addMouth(self, drainage: Segment, boundary: Segment) -> None:
         # Garantindo que o primeiro argumento é da bacia.
-        item = RelationItem()
-        if basin.setId == 0:
-            basin.isMouth = True
-            item.source = basin
-            item.destination = boundary
+
+        if drainage.setId == 0:
+            drainage.isMouth = True
+            item = RelationItem(drainage, boundary, 0)
         else:
             boundary.isMouth = True
-            item.source = boundary
-            item.destination = basin
+            item = RelationItem(boundary, drainage, 0)
 
         # Garantindo que a foz não foi incluida antes.
         found = False
-        for i in range(len(self.mouths)):
-            if item.source.featureId == self.mouths[i].source.featureId:
+        for mouth in self.mouths:
+            if item.source.featureId == mouth.source.featureId:
                 found = True
                 break
 
@@ -134,9 +129,7 @@ class Relation:
 
         # Garantindo que o FID do primeiro segmento seja menor que o FID do segundo.
         if destination.featureId < source.featureId:
-            temp = source
-            source = destination
-            destination = temp
+            source, destination = destination, source
 
         # Verificando se é relação entre foz e limite.
         # Só aceita relação topológica do tipo encosta entre foz e limite da bacia!
@@ -178,7 +171,6 @@ class Relation:
         )
         if primaryIndex >= 0:
             reached_end = False
-            evaluate = False
             isChild = False
             primaryItem = None
             eventItem = None
@@ -190,11 +182,10 @@ class Relation:
                 # Obtendo o índice do evento.
                 primaryItem = self.index[primaryIndex]
 
-                if primaryItem.feature.featureId == featureId:
+                if primaryItem.featureId == featureId:
                     # Lendo evento.
                     eventItem = self.items[primaryItem.value]
 
-                    evaluate = True
                     if (
                         eventItem.source.featureId == featureId
                         and eventItem.destination.featureId != parentFeatureId
@@ -205,13 +196,10 @@ class Relation:
                         and eventItem.source.featureId != parentFeatureId
                     ):
                         relatedSegment = eventItem.source
-                    else:
-                        evaluate = False
 
-                    if evaluate:
+                    if relatedSegment:
                         isChild = True
-                        for i in range(len(siblings)):
-                            childSegment = siblings[i]
+                        for childSegment in siblings:
                             if relatedSegment.featureId == childSegment.featureId:
                                 isChild = False
                         if isChild:
@@ -225,46 +213,43 @@ class Relation:
 
     def compare_position(self, a: RelationItem, b: RelationItem) -> int:
         if (
-            a.source.idFeicao == b.source.idFeicao
-            and a.destination.idFeicao == b.destination.idFeicao
+            a.source.featureId == b.source.featureId
+            and a.destination.featureId == b.destination.featureId
             and a.relationType == b.relationType
         ):
             return 0
-        elif (
-            a.source.idFeicao < b.source.idFeicao
+        if (
+            a.source.featureId < b.source.featureId
             or (
-                a.source.idFeicao == b.source.idFeicao
-                and a.destination.idFeicao < b.destination.idFeicao
+                a.source.featureId == b.source.featureId
+                and a.destination.featureId < b.destination.featureId
             )
             or (
-                a.source.idFeicao == b.source.idFeicao
-                and a.destination.idFeicao == b.destination.idFeicao
+                a.source.featureId == b.source.featureId
+                and a.destination.featureId == b.destination.featureId
                 and a.relationType < b.relationType
             )
         ):
             return -1
-        else:
-            return 1
+        return 1
 
     def findPrimaryIndex(self, start: int, end: int, featureId: int) -> int:
         if start <= end and self.primaryIndex:
             middle = (start + end) // 2
             item = self.primaryIndex[middle]
 
-            if featureId == item.feature.featureId:
+            if featureId == item.featureId:
                 return item.value
-            else:
-                if featureId < item.feature.featureId:
-                    return self.findPrimaryIndex(start, middle - 1, featureId)
-                else:
-                    return self.findPrimaryIndex(middle + 1, end, featureId)
+            if featureId < item.featureId:
+                return self.findPrimaryIndex(start, middle - 1, featureId)
+            return self.findPrimaryIndex(middle + 1, end, featureId)
         return -1
 
     def compareIndexItems(self, a: IndexItem, b: IndexItem) -> bool:
-        if a.feature.featureId == b.feature.featureId:
+        if a.featureId == b.featureId:
             if a.value < b.value:
                 return True
-        elif a.feature.featureId < b.feature.featureId:
+        elif a.featureId < b.featureId:
             return True
         return False
 
@@ -273,30 +258,35 @@ class Relation:
         self.index.clear()
 
         eventItem = None
-        for i in range(len(self.items)):
-            eventItem = self.items[i]
-
+        for i, eventItem in enumerate(self.items):
             # Verificando se são ocorrências de bacia.
-            self.index.append(IndexItem(eventItem.source, i))
-            self.index.append(IndexItem(eventItem.destination, i))
+            self.index.append(IndexItem(eventItem.source.featureId, i))
+            self.index.append(IndexItem(eventItem.destination.featureId, i))
 
         # Ordenando o índice principal.
-        self.index.sort(key=self.compareIndexItems)
+        self.index.sort(key=self.compareIndexItems)  # TODO: bad comparator
 
         # Montando o índice primário.
         self.primaryIndex.clear()
         featureId = -1
         indexItem = None
-        for i in range(len(self.index)):
-            indexItem = self.index[i]
-            if indexItem.feature.featureId != featureId:
-                featureId = indexItem.feature.featureId
-                self.primaryIndex.append(IndexItem(featureId, i))
+        for i, indexItem in enumerate(self.index):
+            if indexItem.featureId != featureId:
+                self.primaryIndex.append(IndexItem(indexItem.featureId, i))
 
     def reportUnexpectedRelations(self, log: Message) -> None:
-        msg_1 = "Erro! Impossível continuar! Encontradas relações topológicas inesperadas."
-        msg_2 = "São esperadas somente relações de encosta, entretanto foram encontradas as relações:"
-        msg_3 = "Consulte a documentação deste aplicativo para mais detalhes sobre as relações topológicas esperadas e inesperadas."
+        msg_1 = (
+            "Erro! Impossível continuar! "
+            "Encontradas relações topológicas inesperadas."
+        )
+        msg_2 = (
+            "São esperadas somente relações de encosta, "
+            "entretanto foram encontradas as relações:"
+        )
+        msg_3 = (
+            "Consulte a documentação deste aplicativo para mais "
+            "detalhes sobre as relações topológicas esperadas e inesperadas."
+        )
         msg_4 = "Confira a topologia e execute o processamento novamente."
         log.append(msg_1 + "\n" + msg_2)
 

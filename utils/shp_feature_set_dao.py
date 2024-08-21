@@ -39,11 +39,11 @@ class SHPFeatureSetDAO:
             print("Failed to load layer!")
             return None
 
-        feature_set = FeatureSet(shapeType, fileName, layer.wkbType())
-
         # Initialize variables
         features = []
         obs = Observation()
+        feature_set = FeatureSet(shapeType, fileName, layer.wkbType(), obs)
+
         msg_1 = "Feição com partes multiplas. Veja: "
         # msg_2 = "Parte da feição FID"  # NOSONAR
         msg_3 = "Feição não processada."
@@ -59,7 +59,7 @@ class SHPFeatureSetDAO:
                     for pointIndex, point in enumerate(part.vertices()):
                         vertex_list.append(
                             Vertex(
-                                id=p,
+                                vertexId=p,
                                 x=point.x(),
                                 y=point.y(),
                                 last=pointIndex == len(part.vertices()) - 1,
@@ -67,7 +67,7 @@ class SHPFeatureSetDAO:
                         )
                         p += 1
 
-                    segments_list = []
+                    segments_list: list[Segment] = []
                     for i in range(len(vertex_list) - 1):
                         vertexA = vertex_list[i]
                         vertexB = vertex_list[i + 1]
@@ -75,7 +75,7 @@ class SHPFeatureSetDAO:
                         if vertexA.x + self.tolerancia < vertexB.x:
                             segments_list.append(
                                 Segment(
-                                    id=len(segments_list),
+                                    segmentId=len(segments_list),
                                     featureId=featureIndex,
                                     setId=shapeType,
                                     a=vertexA,
@@ -85,7 +85,7 @@ class SHPFeatureSetDAO:
                         elif vertexB.x + self.tolerancia < vertexA.x:
                             segments_list.append(
                                 Segment(
-                                    id=len(segments_list),
+                                    segmentId=len(segments_list),
                                     featureId=featureIndex,
                                     setId=shapeType,
                                     a=vertexB,
@@ -96,7 +96,7 @@ class SHPFeatureSetDAO:
                             if vertexA.y + self.tolerancia < vertexB.y:
                                 segments_list.append(  # NOSONAR
                                     Segment(
-                                        id=len(segments_list),
+                                        segmentId=len(segments_list),
                                         featureId=featureIndex,
                                         setId=shapeType,
                                         a=vertexA,
@@ -106,7 +106,7 @@ class SHPFeatureSetDAO:
                             else:
                                 segments_list.append(  # NOSONAR
                                     Segment(
-                                        id=len(segments_list),
+                                        segmentId=len(segments_list),
                                         featureId=featureIndex,
                                         setId=shapeType,
                                         a=vertexB,
@@ -125,7 +125,7 @@ class SHPFeatureSetDAO:
                     features.append(feature_object)
 
                     feature_object.hasObservation = True
-                    obs.setObservacao(feature.id(), msg_1)
+                    obs.set_value(feature.id(), msg_1)
             else:
                 # Handle singlepart geometries
                 vertex_list = [
@@ -141,12 +141,11 @@ class SHPFeatureSetDAO:
                         vertex_list=vertex_list,
                         segments_list=[
                             Segment(
-                                id=0,
+                                segmentId=0,
                                 featureId=featureIndex,
                                 setId=shapeType,
                                 a=vertex_list[0],
                                 b=vertex_list[0],
-                                isMouth=True,
                             )
                         ],
                     )
@@ -165,7 +164,6 @@ class SHPFeatureSetDAO:
 
         # Set the attributes for the figura (ConjuntoFeicao object)
         feature_set.featuresList = features
-        feature_set.obs = obs
 
         return feature_set
 
@@ -316,12 +314,8 @@ class SHPFeatureSetDAO:
         shpLayer.updateExtents()
 
     def saveFeatureSet(self, featureSet: FeatureSet, params: Params) -> None:
-        self.createFeatureSet(
-            params.getNomeNovoArquivo(), QgsWkbTypes.PolygonGeometry
-        )
-        shp_layer = QgsVectorLayer(
-            params.getNomeNovoArquivo(), "Hydroflow Results", "ogr"
-        )
+        self.createFeatureSet(params.newFileName, QgsWkbTypes.PolygonGeometry)
+        shp_layer = QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
 
         # Write existing features
         for feature in featureSet.featuresList:
@@ -335,17 +329,17 @@ class SHPFeatureSetDAO:
 
         # Write new features
         for feature in featureSet.newFeaturesList:
-            attributes = featureSet.getNewFeatureAttributes(feature.getId())
+            attributes = featureSet.getNewFeatureAttributes(feature.featureId)
             self.saveRecord(
                 feature,
                 shp_layer,
                 params.strahlerOrderType,
                 params.shreveOrderEnabled,
-                attributes,
+                [attributes],
             )
 
         shp_layer.updateExtents()
-        self.copyConfigFiles(params.getNomeArquivo(), params.getNomeNovoArquivo())
+        self.copyConfigFiles(params.drainageFileName, params.newFileName)
         QgsProject.instance().addMapLayer(shp_layer)
 
     def copyConfigFiles(self, fileName: str, newFileName: str):

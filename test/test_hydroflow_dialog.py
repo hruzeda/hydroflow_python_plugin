@@ -14,11 +14,10 @@ __copyright__ = "Copyright 2024, Henrique Uzêda"
 
 import unittest
 
-from qgis.PyQt.QtGui import QDialogButtonBox, QDialog
+from qgis.PyQt.QtGui import QDialog, QDialogButtonBox
+from utilities import get_qgis_app
 
 from hydroflow_dialog import HydroflowDialog
-
-from utilities import get_qgis_app
 
 QGIS_APP = get_qgis_app()
 

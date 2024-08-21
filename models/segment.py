@@ -1,18 +1,17 @@
 from typing import Optional
-
 from .vertex import Vertex
 
 
 class Segment:
     def __init__(
         self,
-        id: int,
+        segmentId: int,
         featureId: int,
-        setId: int,
+        setId: Optional[int],
         a: Vertex,
         b: Vertex,
     ):
-        self.id = id
+        self.segmentId = segmentId
         self.featureId = featureId
         self.setId = setId
         self.a = a
@@ -50,16 +49,14 @@ class Segment:
 
         if self.featureId < segmento.featureId:
             return -1
-        elif self.featureId > segmento.featureId:
+        if self.featureId > segmento.featureId:
             return 1
-        else:
-            if self.setId < segmento.setId:
-                return -1
-            elif self.setId > segmento.setId:
-                return 1
-            else:
-                if self.id < segmento.id:
-                    return -1
-                elif self.id > segmento.id:
-                    return 1
+        if self.setId and segmento.setId and self.setId < segmento.setId:
+            return -1
+        if self.setId and segmento.setId and self.setId > segmento.setId:
+            return 1
+        if self.segmentId < segmento.segmentId:
+            return -1
+        if self.segmentId > segmento.segmentId:
+            return 1
         return 0

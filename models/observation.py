@@ -8,6 +8,9 @@ class Observation:
     def __init__(self):
         self.list = []
 
+    def cleanup(self):
+        self.list = []
+
     def get_value(self, featureId: int) -> str:
         for item in self.list:
             if item.featureId == featureId:
@@ -17,8 +20,7 @@ class Observation:
     def set_value(self, featureId: int, text: str) -> None:
         found = False
         if len(self.list) > 0:
-            for pos in range(len(self.list)):
-                item = self.list[pos]
+            for item in self.list:
                 if item.featureId == featureId:
                     item.text = text
                     found = True

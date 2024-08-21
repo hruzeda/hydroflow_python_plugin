@@ -7,10 +7,10 @@ class Position:
     def __init__(self, geo: Geometry, log: Message):
         self.geo = geo
         self.log = log
-        self.list = []
+        self.list: list[Segment] = []
 
     def delete(self, indice: int) -> None:
-        if indice < len(self.lista):
+        if indice < len(self.list):
             self.list.pop(indice)
 
     def locate(self, linhaVarredura: float, segmento: Segment) -> int:
@@ -21,9 +21,9 @@ class Position:
     ) -> int:
         result = -1  # Não encontrou.
 
-        if end < self.list.size() and start <= end:
+        if start <= end < len(self.list):
             middle = round((start + end) / 2)
-            segItem = self.list.at(middle)
+            segItem = self.list[middle]
 
             # Comparando segmento com item central.
             if segment.compareTo(segItem) == 0:

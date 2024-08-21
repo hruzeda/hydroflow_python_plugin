@@ -15,8 +15,8 @@ from .utils.message import Message
 class Classificator:
     def __init__(
         self,
-        drainage: Optional[FeatureSet],
-        boundary: Optional[FeatureSet],
+        drainage: FeatureSet,
+        boundary: FeatureSet,
         params: Params,
         log: Message,
     ) -> None:
@@ -31,7 +31,10 @@ class Classificator:
 
     def cleanup(self):
         self.log.cleanup()
-        self.__init__(self.drainage, self.boundary, self.params, self.log)
+        self.geo = Geometry(self.params.toleranceXY)
+        self.iterator = Iterator(self.geo)
+        self.topologicalRelations.cleanup()
+        self.position = Position(self.geo, self.log)
 
     def classifyWaterBasin(self) -> int:
         """
@@ -72,20 +75,13 @@ class Classificator:
         self.iterator.sortRows()
 
     def iteratePlane(self) -> None:
-        record = 0
-        above = 0
-        below = 0
-        iteratorLine = 0
-        previousIteration = 0
-        index_A = 0
-        index_B = 0
-        lv = 0
-
         # Iniciando a varredura.
         lv = self.iterator.next()
+        if not lv:
+            return
         previousIteration = lv.point.x
 
-        while lv != 0:
+        while lv is not None:
             iteratorLine = lv.point.x
             record = lv.segmentA
 
@@ -131,6 +127,7 @@ class Classificator:
                 if (
                     not self.geo.equalsTo(lv.point, lv.segmentA.a)
                     and not self.geo.equalsTo(lv.point, lv.segmentA.b)
+                    and lv.segmentB
                     and not self.geo.equalsTo(lv.point, lv.segmentB.a)
                     and not self.geo.equalsTo(lv.point, lv.segmentB.b)
                 ):
@@ -151,7 +148,6 @@ class Classificator:
                     if below != 0:  # Se há segmento abaixo:
                         self.evaluateSegments(lv.point, lv.segmentA, below)
 
-            lv.cleanup()
             lv = self.iterator.next()
 
         # Processando os pontos da ultima linha de varredura.
@@ -198,8 +194,6 @@ class Classificator:
                     )
 
     def processIteratorPoints(self, iteratorLine: int) -> None:
-        segment = 0
-        point = 0
         test = []
 
         # Obtendo o primeiro ponto de varradura.
@@ -244,9 +238,6 @@ class Classificator:
                                 2,
                             )
 
-            # Limpando o ponto de varedura corrente.
-            iteratorPoint.cleanup()
-
     def buildTree(self) -> int:
         """
         Valores de retorno:
@@ -264,14 +255,12 @@ class Classificator:
             self.topologicalRelations.buildIndexes()
 
             # Construindo a árvore que representa cada bacia.
-            entrypointRelation = 0
-            children = []
             for entrypointRelation in self.topologicalRelations.mouths:
                 # origem: segmento da foz; destino: segmento do limite.
                 result = self.createNodes(
                     entrypointRelation.source,
                     entrypointRelation.destination,
-                    children,
+                    [],
                     result,
                 )[0]
         else:
@@ -285,7 +274,7 @@ class Classificator:
         parent: Segment,
         sibling_nodes: list[Segment],
         result: int,
-    ) -> tuple[int, Node]:
+    ) -> tuple[int, Optional[Node]]:
         """
         Valores para resultado:
         0 - processamento sem erros
@@ -301,6 +290,9 @@ class Classificator:
             basinConnection = False
             currentFeature = self.drainage.getFeature(segment.featureId)
 
+            if not currentFeature:
+                return 0, None
+
             if segment.isMouth:
                 # A feição corrente é a feição da foz e o segmento pai é do limite da bacia.
                 # É o início do processamento de uma bacia!
@@ -313,10 +305,9 @@ class Classificator:
                     # Árvore já processada. Existe interconexão entre bacias!
                     basinConnection = True
             else:
-                if currentFeature.mouthFeatureId < 0:
-                    currentFeature.mouthFeatureId = self.drainage.getFeature(
-                        parent.featureId
-                    ).mouthFeatureId
+                parentFeature = self.drainage.getFeature(parent.featureId)
+                if parentFeature and currentFeature.mouthFeatureId < 0:
+                    currentFeature.mouthFeatureId = parentFeature.mouthFeatureId
                 else:
                     # Feição já processada. Existe um loop na árvore!
                     loopBasin = True
@@ -327,19 +318,19 @@ class Classificator:
 
                 # Processando o fluxo.
                 if len(currentFeature.segments_list) > 1:  # Vários segmentos.
-                    if segment.id == 0:
+                    if segment.segmentId == 0:
                         node.flow = 2  # Inverter!
                     else:
                         node.flow = 1  # Manter!
                 else:  # Segmento único.
                     # Verificando se o vértice "a" do segmento encosta no pai.
                     if segment.a.equalsTo(parent.a) or segment.a.equalsTo(parent.b):
-                        if segment.a.id == 0:
+                        if segment.a.vertexId == 0:
                             node.flow = 2  # Inverter!
                         else:
                             node.flow = 1  # Manter!
                     else:  # Então é o vértice "b" que encosta no pai.
-                        if segment.b.id == 0:
+                        if segment.b.vertexId == 0:
                             node.flow = 2  # Inverter!
                         else:
                             node.flow = 1  # Manter!
@@ -371,16 +362,16 @@ class Classificator:
                         childSegments[0], segment, childSegments, result
                     )
 
-                    if result == 0:
+                    if result == 0 and childNode:
                         node.inserirFilhoNo(childNode)
 
                         # Classificando por Strahler. Passar essa lógica para No::inserirFilhoNo()!
                         if self.params.strahlerOrderType > 0:
-                            node.setStrahler(childNode.strahler)
+                            node.strahler = childNode.strahler
 
                         # //Classificando por Shreve. Passar essa lógica para No::inserirFilhoNo()!
                         if self.params.shreveOrderEnabled:
-                            node.setShreve(childNode.shreve)
+                            node.shreve = childNode.shreve
                 else:  # Nó com dois ou mais filhos.
                     if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
                         # Gravando a mensagem de mais de três afluentes no log.
@@ -470,18 +461,17 @@ class Classificator:
         msg_1 = "Aviso: a feição FID"
         msg_2 = " não foi processada. Confira a topologia da rede de drenagem."
         msg_3 = "Feicao nao processada."
-        feature = 0
 
         for i in range(self.drainage.getTotalFeatures()):
             feature = self.drainage.getFeature(i)
-            if (
+            if feature and (
                 feature.flow == 0
                 or (self.params.strahlerOrderType > 0 and feature.strahler == 0)
                 or (self.params.shreveOrderEnabled and feature.shreve == 0)
             ):
                 msg_0 = msg_1 + str(feature.featureId) + msg_2
                 self.log.append(msg_0)
-                self.drainage.obs = (feature.featureId, msg_3)
+                self.drainage.obs.set_value(feature.featureId, msg_3)
                 feature.hasObservation = True
                 result = 1
 

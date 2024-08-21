@@ -46,10 +46,10 @@ class Controller:
         params.origin.setCursor(Qt.WaitCursor)
         dao = SHPFeatureSetDAO(params.toleranceXY)
 
-        basin = dao.loadFeatureSet(params.basinFileName, "hidrografia", 0)
+        drainage = dao.loadFeatureSet(params.drainageFileName, "drenagem", 0)
         boundary = dao.loadFeatureSet(params.boundaryFileName, "limite", 1)
 
-        if not basin:
+        if not drainage:
             params.origin.setCursor(Qt.ArrowCursor)
             return 2
 
@@ -58,7 +58,7 @@ class Controller:
             return 3
 
         # Classificando a bacia.
-        classificator = Classificator(basin, boundary, params, log)
+        classificator = Classificator(drainage, boundary, params, log)
 
         """
         Códigos de erro:
@@ -88,7 +88,7 @@ class Controller:
                 log.result = new
 
                 # Gravando os arquivos.
-                dao.saveFeatureSet(basin, params)
+                dao.saveFeatureSet(drainage, params)
                 params.origin.setCursor(Qt.ArrowCursor)
             result = 0
         else:
@@ -102,6 +102,6 @@ class Controller:
         # Apagando os objetos.
         classificator.cleanup()
         boundary.cleanup()
-        basin.cleanup()
+        drainage.cleanup()
 
         return result

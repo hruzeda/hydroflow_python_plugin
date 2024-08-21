@@ -78,16 +78,14 @@ class Geometry:
             ):  # A linha de varredura "x" intercepta o vértice "b".
                 p = Vertex(b.x, b.y)
             else:
-                """
-                Calculando o ponto relativo.
-                Para a.x < b.x
-                double dx = b.x - a.x;
-                double dy = b.y - a.y;
-                double  t = (x - a.x) / dx;
-                y = (t * dy) + p.x;
-                ou
-                y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
-                """
+                # Calculando o ponto relativo.
+                # Para a.x < b.x
+                # double dx = b.x - a.x;
+                # double dy = b.y - a.y;
+                # double  t = (x - a.x) / dx;
+                # y = (t * dy) + p.x;
+                # ou
+                # y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
                 y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y
                 p = Vertex(x, y)
         return p

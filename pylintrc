@@ -213,7 +213,7 @@ ignored-argument-names=_.*
 max-locals=19
 
 # Maximum number of return / yield for function / method body
-max-returns=6
+max-returns=7
 
 # Maximum number of branch for function / method body
 max-branches=12
@@ -232,6 +232,9 @@ min-public-methods=0
 
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=20
+
+# Maximum number of comparisons in an if statement
+max-bool-expr=6
 
 
 [CLASSES]

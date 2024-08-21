@@ -92,12 +92,12 @@ class Iterator:
         # Avaliando o indice do item de varredura.
         if self.geo.smallerThan(b.point.x, a.point.x):  # Índice menor primeiro
             return 1
-        elif self.geo.equalsTo(a.point.x, b.point.x):
+        if self.geo.equalsTo(a.point.x, b.point.x):
             # Avaliando o tipo dos eventos
             if a.eventType == 0 and b.eventType == 0:  # São do mesmo tipo: entrada!
                 # Avaliando altura na linha de varredura (y).
                 return 1 if self.geo.smallerThan(b.point.y, a.point.y) else -1
-            elif a.eventType == 1 and b.eventType == 1:  # São do mesmo tipo: saída!
+            if a.eventType == 1 and b.eventType == 1:  # São do mesmo tipo: saída!
                 xA = a.segmentA.getSmallerX(self.geo.tolerance)
                 xB = b.segmentA.getSmallerX(self.geo.tolerance)
                 return (
@@ -131,12 +131,10 @@ class Iterator:
             if self.geo.equalsTo(aX=primeiro.x, bX=segundo.x):
                 if self.geo.smallerThan(primeiro.y, segundo.y):
                     return -1
-                else:  # y do primeiro > y do segundo.
-                    return 1
-            elif self.geo.smallerThan(primeiro.x, segundo.x):
+                return 1  # y do primeiro > y do segundo.
+            if self.geo.smallerThan(primeiro.x, segundo.x):
                 return -1
-            else:  # x do primeiro > x do segundo.
-                return 1
+            return 1  # x do primeiro > x do segundo.
         return 0
 
     def addIteratorPoint(
@@ -195,7 +193,7 @@ class Iterator:
             if comp == 0:  # Encontrou!
                 self.points.pop(middle)
                 return item
-            elif (
+            if (
                 comp < 0
             ):  # Linha de varredura é menor que a ordenada do ponto do meio.
                 if middle > 0:

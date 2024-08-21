@@ -11,7 +11,7 @@ class Message:
         self.list: list[str] = []
 
     def cleanup(self):
-        self.__init__(self.params)
+        self.list = []
 
     def append(self, message):
         self.list.append(message)
@@ -60,7 +60,7 @@ class Message:
             + str(self.params.toleranceXY)
             + "\n"
             + "Rede de drenagem: "
-            + self.params.basinFileName
+            + self.params.drainageFileName
             + "\n"
             + "Limite da área: "
             + self.params.boundaryFileName
@@ -69,11 +69,17 @@ class Message:
             + "Inferir: "
             + "\n"
             + temp_1
-            + "\n-------------------------------------------------------------------------------------------------------------------"
+            + (
+                "\n---------------------------------------------------------------"
+                "----------------------------------------------------"
+            )
         )
 
     def getFooter(self):
-        return "-------------------------------------------------------------------------------------------------------------------"
+        return (
+            "---------------------------------------------------------------"
+            "----------------------------------------------------"
+        )
 
     def hasMessage(self) -> bool:
         return len(self.list) > 0
