@@ -29,7 +29,10 @@ class Controller:
             QtWidgets.QMessageBox.warning(
                 self.params.origin,
                 "Atenção",
-                "Exutório da bacia hidrográfica não identificado ou não conectado corretamente à rede de drenagem!",
+                (
+                    "Exutório da bacia hidrográfica não identificado ou não "
+                    "conectado corretamente à rede de drenagem!"
+                ),
             )
         else:  # Houve erro listado no log!
             QtWidgets.QMessageBox.warning(
@@ -39,6 +42,16 @@ class Controller:
             )
 
     def classifyWaterBasin(self, params: Params) -> int:
+        """
+        Códigos de erro:
+        0 - Processamento concluído com sucesso!
+        1 - Processamento concluído com alertas!
+        2 - Foz da bacia hidrográfica não identificada!
+        3 - Foi identificada mais de uma foz na bacia hidrográfica! (listado no log)
+        4 - Foi identificado uma feição com mais de dois afluentes! (listado no log)
+        5 - Relações topológicas inesperadas! (listado no log)
+        """
+
         self.params = params
         log = Message(params)
 
@@ -60,21 +73,12 @@ class Controller:
         # Classificando a bacia.
         classificator = Classificator(drainage, boundary, params, log)
 
-        """
-        Códigos de erro:
-        0 - Processamento concluído com sucesso!
-        1 - Processamento concluído com alertas!
-        2 - Foz da bacia hidrográfica não identificada!
-        3 - Foi identificada mais de uma foz na bacia hidrográfica! (listado no log)
-        4 - Foi identificado uma feição com mais de dois afluentes! (listado no log)
-        5 - Relações topológicas inesperadas! (listado no log)
-        """
         result = classificator.classifyWaterBasin()
         params.origin.setCursor(Qt.ArrowCursor)
         self.displayMessage(result)
 
         # Salvando o novo arquivo.
-        if result == 0 or result == 1:
+        if result in (0, 1):
             # Obtendo nome do novo arquivo.
             new = QtWidgets.QFileDialog.getSaveFileName(
                 params.origin,

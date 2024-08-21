@@ -1,3 +1,4 @@
+from typing import Optional
 from ..utils.geometry import Geometry
 from ..utils.message import Message
 from .segment import Segment
@@ -8,6 +9,9 @@ class Position:
         self.geo = geo
         self.log = log
         self.list: list[Segment] = []
+
+    def cleanup(self) -> None:
+        self.list.clear()
 
     def delete(self, indice: int) -> None:
         if indice < len(self.list):
@@ -69,12 +73,12 @@ class Position:
 
                 # Tratando os casos 1 e 2.
                 if self.geo.equalsTo(first.a.y, second.a.y):
-                    result = self.geo.compararAngulos(first, second)
+                    result = self.geo.compareAngles(first, second)
                     if result == 0:
                         # Tratando o caso 1 (segmentos horizontais). Arbitrei!
-                        result = self.geo.compararValores(first.a.x, second.a.x)
+                        result = self.geo.compare(first.a.x, second.a.x)
                 else:
-                    result = self.geo.compararValores(first.a.y, second.a.y)
+                    result = self.geo.compare(first.a.y, second.a.y)
 
             # Testando casos 6 e 7.
             elif (
@@ -88,7 +92,7 @@ class Position:
                 # Caso 6.
 
                 # Determinando a linha de varredura.
-                if self.geo.isGreater(first.a.x, second.a.x):
+                if self.geo.greaterThan(first.a.x, second.a.x):
                     iteratorRow = first.a.x
                 else:
                     iteratorRow = second.a.x
@@ -104,13 +108,82 @@ class Position:
                 and not self.geo.equalsTo(pSecond, second.b)
             ):
                 # Comparando invertido por ser interseção.
-                result = self.geo.compararAngulos(second, first)
+                result = self.geo.compareAngles(second, first)
 
             # Tratando os casos 4 e 5.
             else:
-                result = self.geo.compararAngulos(first, second)
+                result = self.geo.compareAngles(first, second)
         else:
             # Alturas relativas diferentes.
-            result = self.geo.compararValores(pFirst.y, pSecond.y)
+            result = self.geo.compare(pFirst.y, pSecond.y)
 
         return result
+
+    def insert(self, segment: Segment) -> int:
+        index = -1
+        if len(self.list) == 0:
+            self.list.append(segment)
+            index = 0
+        else:
+            stop = False
+            start = 0
+            end = len(self.list) - 1
+            iteratorRow = segment.a.x
+
+            while not stop:
+                # Calculando o meio (indice).
+                middle = round((start + end) / 2)
+
+                # Lendo o registro do meio.
+                middleSegment = self.list[middle]
+
+                # Comparando o registro com o segmento do resistro do meio.
+                comparison = self.comparePosition(
+                    iteratorRow, segment, middleSegment
+                )
+
+                # registro < segMeio. Iserir após o meio.
+                if comparison < 0:
+                    if middle == end:
+                        if middle == len(self.list) - 1:
+                            self.list.append(segment)
+                            index = len(self.list) - 1
+                            stop = True
+                        else:
+                            index = middle + 1
+                            self.list.insert(index, segment)
+                            stop = True
+                    else:
+                        start = middle + 1
+
+                # registro > segMeio. Iserir antes o meio.
+                elif comparison > 0:
+                    if start == middle:
+                        index = middle
+                        self.list.insert(index, segment)
+                        stop = True
+                    else:
+                        end = middle - 1
+
+                else:  # Já está incluido.
+                    index = middle
+                    stop = True
+
+        return index
+
+    def above(self, index: int) -> Optional[Segment]:
+        result = None
+        if 0 > index < len(self.list):
+            index -= 1
+            result = self.list[index]
+        return result
+
+    def below(self, index: int) -> Optional[Segment]:
+        result = None
+        if 0 >= index < len(self.list) - 1:
+            index += 1
+            result = self.list[index]
+        return result
+
+    def swap(self, first: int, second: int) -> None:
+        self.list[first], self.list[second] = self.list[second], self.list[first]

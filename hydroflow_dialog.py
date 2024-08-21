@@ -33,7 +33,7 @@ from .params import Params
 class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
     def __init__(self, parent=None):
         """Constructor."""
-        super(HydroflowDialog, self).__init__(parent)
+        super(HydroflowDialog).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -93,18 +93,8 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
 
     def on_pushButton_Exec_clicked(self):
         try:
-            # Validando arquivos.
-            con = Controller()
-
             nomeBacia = self.lineEdit_HidLn.text()
-            if not con.validateFile(nomeBacia):
-                self.exibirMensagem(2)
-                return
-
             nomeLimite = self.lineEdit_Lim.text()
-            if not con.validateFile(nomeLimite):
-                self.exibirMensagem(3)
-                return
 
             # Validando a tolerância.
             if self.lineEdit_TolXY.text().isEmpty():
@@ -119,6 +109,7 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
                 self.exibirMensagem(4)
                 return
 
+            # Validando arquivos.
             # Determinando o tipo de classificação Strahler.
             tipoClassificacaoStrahler = 0
 
@@ -136,6 +127,16 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
                 tipoClassificacaoStrahler,
                 self.checkBox_Shreve.isChecked(),
             )
+
+            con = Controller(params)
+
+            if not con.validateFile(nomeBacia, "drenagem"):
+                self.exibirMensagem(2)
+                return
+
+            if not con.validateFile(nomeLimite, "limite"):
+                self.exibirMensagem(3)
+                return
 
             # Iniciando o processo.
             resultado = con.classifyWaterBasin(params)
@@ -168,7 +169,10 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
             QtWidgets.QMessageBox.warning(
                 self,
                 title,
-                "Arquivo do limite da bacia/exutório inválido ou não pode ser acessado!",
+                (
+                    "Arquivo do limite da bacia/exutório inválido ou "
+                    "não pode ser acessado!"
+                ),
             )
         elif codigo == 4:
             QtWidgets.QMessageBox.warning(

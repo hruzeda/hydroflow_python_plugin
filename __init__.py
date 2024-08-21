@@ -24,13 +24,12 @@
 """
 
 
-def classFactory(iface):  # pylint: disable=invalid-name  NOSONAR
+def classFactory(iface):
     """Load Hydroflow class from file Hydroflow.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    #
-    from .hydroflow import Hydroflow
+    from .hydroflow import Hydroflow  # pylint: disable=import-outside-toplevel
 
     return Hydroflow(iface)

@@ -12,6 +12,9 @@ class Geometry:
     def smallerThan(self, a, b):
         return a + self.tolerance < b
 
+    def greaterThan(self, a, b):
+        return a - self.tolerance > b
+
     def equalsTo(
         self,
         a: Optional[Vertex] = None,
@@ -89,3 +92,36 @@ class Geometry:
                 y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y
                 p = Vertex(x, y)
         return p
+
+    def compare(self, a: float, b: float) -> int:
+        if self.smallerThan(a, b):
+            return -1
+        if self.greaterThan(a, b):
+            return 1
+        return 0
+
+    def compareAngles(self, first: Segment, second: Segment) -> int:
+        """
+        Compara o ângulo inclinação dos segmentos.
+        Resposta:
+                 -1 o ângulo do primeiro é menor que o ângulo do segundo segmento
+                  0 o ângulo do primeiro é igual ao ângulo do segundo segmento
+                  1 o ângulo do primeiro é maior que o ângulo do segundo segmento
+        """
+        a = self.subtract(first.b, first.a)
+        b = self.subtract(second.b, second.a)
+
+        # Comparando.
+        comp = (a.x * b.y) - (b.x * a.y)
+
+        if comp < 0:
+            return 1
+        if comp > 0:
+            return -1
+        return 0
+
+    def subtract(self, a: Vertex, b: Vertex) -> Vertex:
+        """
+        Subtrai das coordenadas de "a" as coordenadas de "b".
+        """
+        return Vertex(a.x - b.x, a.y - b.y)

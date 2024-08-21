@@ -54,7 +54,8 @@ class Classificator:
         # Varrendo o plano;
         self.iteratePlane()
 
-        # Verificando a existência de relações topológicas inesperadas (toque e interseção).
+        # Verificando a existência de relações topológicas inesperadas
+        # (toque e interseção).
         if self.topologicalRelations.err:
             # Listando os eventos estranhos.
             self.topologicalRelations.reportUnexpectedRelations(self.log)
@@ -97,27 +98,27 @@ class Classificator:
             # Processando o evento da linha de varredura.
             if lv.eventType == 0:  # Extremo esquerdo. Segmento entrando.
                 # Inserindo em posição.
-                index_A = self.position.inserir(record)
+                index_A = self.position.insert(record)
 
                 # Verificando segmento imediatamente acima.
-                above = self.position.acima(index_A)
-                if above != 0:  # Se há segmento acima:
+                above = self.position.above(index_A)
+                if above:  # Se há segmento acima:
                     self.evaluateSegments(lv.point, above, record)
 
                 # Verificando segmento imediatamente abaixo.
-                below = self.position.abaixo(index_A)
-                if below != 0:  # Se há segmento abaixo:
+                below = self.position.below(index_A)
+                if below:  # Se há segmento abaixo:
                     self.evaluateSegments(lv.point, record, below)
             elif lv.eventType == 1:
                 # Localizando o segmento em Posicao.
                 index_A = self.position.locate(iteratorLine, record)
 
                 # Verificando segmento imediatamente acima.
-                above = self.position.acima(index_A)
-                if above != 0:
+                above = self.position.above(index_A)
+                if above:
                     # Verificando segmento imediatamente abaixo.
-                    below = self.position.abaixo(index_A)
-                    if below != 0:
+                    below = self.position.below(index_A)
+                    if below:
                         self.evaluateSegments(lv.point, above, below)
 
                 # Excluindo de posição.
@@ -136,23 +137,23 @@ class Classificator:
                     index_B = self.position.locate(iteratorLine, lv.segmentB)
 
                     # Trocando segmentos de posição .
-                    self.position.trocar(index_A, index_B)
+                    self.position.swap(index_A, index_B)
 
                     # Verificando segmento imediatamente acima.
-                    above = self.position.acima(index_A)
-                    if above != 0:  # Se há segmento acima:
+                    above = self.position.above(index_A)
+                    if above:  # Se há segmento acima:
                         self.evaluateSegments(lv.point, above, lv.segmentB)
 
                     # Verificando segmento imediatamente abaixo.
-                    below = self.position.abaixo(index_B)
-                    if below != 0:  # Se há segmento abaixo:
+                    below = self.position.below(index_B)
+                    if below:  # Se há segmento abaixo:
                         self.evaluateSegments(lv.point, lv.segmentA, below)
 
             lv = self.iterator.next()
 
         # Processando os pontos da ultima linha de varredura.
         self.processIteratorPoints(previousIteration)
-        self.position.limparPosicao()
+        self.position.cleanup()
 
     def evaluateSegments(
         self, point: Vertex, above: Segment, below: Segment
@@ -243,7 +244,7 @@ class Classificator:
         Valores de retorno:
         0 - processamento correto
         2 - foz não identificada
-        3 - mais de uma foz identificada - Não utilizado no processamento de várias fozes!
+        3 - mais de uma foz identificada
         4 - nó com mais de dois filhos
         5 - nó em loop
         6 - bacias interconectadas
@@ -294,8 +295,8 @@ class Classificator:
                 return 0, None
 
             if segment.isMouth:
-                # A feição corrente é a feição da foz e o segmento pai é do limite da bacia.
-                # É o início do processamento de uma bacia!
+                # A feição corrente é a feição da foz e o segmento pai é do
+                # limite da bacia. É o início do processamento de uma bacia!
 
                 # Verificando se a feição da foz já foi processada.
                 if currentFeature.mouthFeatureId < 0:
@@ -344,8 +345,8 @@ class Classificator:
                 # Classificando o nó.
                 childNode = None
 
-                # Instanciar o nó com valor inicial 1 para Strahler e Shreve para eliminar a necessidade
-                # de usar os métodos No::setStrahler() e No::setShreve().
+                # Instanciar o nó com valor inicial 1 para Strahler e Shreve
+                # para eliminar a necessidade de definit os valores para os nós.
                 # Não será necessário avaliar (filhosSegmento.size() == 0).
                 if len(childSegments) == 0:  # Nó sem filhos. É folha!
                     # Classificando por Strahler
@@ -363,23 +364,31 @@ class Classificator:
                     )
 
                     if result == 0 and childNode:
-                        node.inserirFilhoNo(childNode)
+                        node.addChild(childNode)
 
-                        # Classificando por Strahler. Passar essa lógica para No::inserirFilhoNo()!
+                        # Classificando por Strahler.
+                        # TODO: Passar essa lógica para No::inserirFilhoNo()!
                         if self.params.strahlerOrderType > 0:
                             node.strahler = childNode.strahler
 
-                        # //Classificando por Shreve. Passar essa lógica para No::inserirFilhoNo()!
+                        # Classificando por Shreve.
+                        # TODO: Passar essa lógica para No::inserirFilhoNo()!
                         if self.params.shreveOrderEnabled:
                             node.shreve = childNode.shreve
                 else:  # Nó com dois ou mais filhos.
                     if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
                         # Gravando a mensagem de mais de três afluentes no log.
-                        msg_1 = "Aviso! Estrutura topológica não esperada para hierarquização Strahler."
+                        msg_1 = (
+                            "Aviso! Estrutura topológica não esperada para "
+                            "hierarquização Strahler."
+                        )
                         msg_2 = " A Feição FID"
                         msg_3 = " recebe mais de dois afluentes em um mesmo ponto."
                         msg_4 = "Os identificadores desses afluentes são:"
-                        msg_5 = "O resultado final apresentará a classificação por Strahler relaxado."
+                        msg_5 = (
+                            "O resultado final apresentará a classificação "
+                            "por Strahler relaxado."
+                        )
                         self.log.append(
                             msg_1
                             + msg_2
@@ -390,10 +399,9 @@ class Classificator:
                         )
 
                         # Listando os filhos.
-                        for i in range(len(childSegments)):
-                            filho = childSegments[i]
+                        for i, child in enumerate(childSegments):
                             self.log.append(
-                                "   " + str(i + 1) + " - FID" + str(filho.featureId)
+                                "   " + str(i + 1) + " - FID" + str(child.featureId)
                             )
                         self.log.append("\n" + msg_5)
 
@@ -401,13 +409,14 @@ class Classificator:
                         self.params.strahlerOrderType = 2
 
                     # Cadastrando os nós filhos.
-                    for i in range(len(childSegments)):
+                    for child in childSegments:
                         result, childNode = self.createNodes(
-                            childSegments[i], segment, childSegments, result
+                            child, segment, childSegments, result
                         )
-                        if result == 0:
-                            # As regras para a classificação por Strahler e Shreve estão no método No::inserirFilhoNo().
-                            node.inserirFilhoNo(childNode)
+                        if result == 0 and childNode:
+                            # As regras para a classificação por Strahler e Shreve
+                            # estão no método No::inserirFilhoNo().
+                            node.addChild(childNode)
 
                 # Gravando classificação.
                 if result == 0:
@@ -418,7 +427,10 @@ class Classificator:
                         node.shreve,
                     )
             else:  # Feição já processada!
-                msg_1 = "Erro! impossível continuar! Estrutura topológica não esperada para hierarquização."
+                msg_1 = (
+                    "Erro! impossível continuar! Estrutura topológica não "
+                    "esperada para hierarquização."
+                )
                 msg_2 = ""
                 msg_3 = ""
                 msg_4 = ""

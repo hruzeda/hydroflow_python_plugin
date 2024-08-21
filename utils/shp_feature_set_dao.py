@@ -335,7 +335,7 @@ class SHPFeatureSetDAO:
                 shp_layer,
                 params.strahlerOrderType,
                 params.shreveOrderEnabled,
-                [attributes],
+                [attributes] if attributes else None,
             )
 
         shp_layer.updateExtents()

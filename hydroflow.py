@@ -23,6 +23,7 @@
 """
 
 import os.path
+from typing import Optional
 
 from qgis.PyQt.QtCore import QCoreApplication, QSettings, QTranslator
 from qgis.PyQt.QtGui import QIcon
@@ -51,9 +52,7 @@ class Hydroflow:
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
         locale = QSettings().value("locale/userLocale")[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir, "i18n", "Hydroflow_{}.qm".format(locale)
-        )
+        locale_path = os.path.join(self.plugin_dir, "i18n", f"Hydroflow_{locale}.qm")
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -63,6 +62,7 @@ class Hydroflow:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr("&Hydroflow")
+        self.dlg: Optional[HydroflowDialog] = None
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -180,7 +180,8 @@ class Hydroflow:
         """Run method that performs all the real work"""
 
         # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started
+        # Only create GUI ONCE in callback, so that it will only load when the
+        # plugin is started
         if self.first_start:
             self.first_start = False
             self.dlg = HydroflowDialog()
