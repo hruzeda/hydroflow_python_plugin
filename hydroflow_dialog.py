@@ -25,10 +25,9 @@
 from PyQt5 import QtCore
 from qgis.PyQt import QtWidgets
 
-from controller import Controller
-from params import Params
-
+from .controller import Controller
 from .hydroflow_dialog_base_ui import Ui_HydroflowDialogBase
+from .params import Params
 
 
 class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):

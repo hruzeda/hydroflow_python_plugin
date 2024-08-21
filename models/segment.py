@@ -1,16 +1,16 @@
 from typing import Optional
 
-from models.vertex import Vertex
+from .vertex import Vertex
 
 
 class Segment:
     def __init__(
         self,
-        id=-1,
-        featureId=-1,
-        setId=-1,
-        a: Optional[Vertex] = None,
-        b: Optional[Vertex] = None,
+        id: int,
+        featureId: int,
+        setId: int,
+        a: Vertex,
+        b: Vertex,
     ):
         self.id = id
         self.featureId = featureId
@@ -62,3 +62,4 @@ class Segment:
                     return -1
                 elif self.id > segmento.id:
                     return 1
+        return 0

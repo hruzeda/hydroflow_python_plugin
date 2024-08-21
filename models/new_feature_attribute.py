@@ -1,6 +1,6 @@
 from typing import Optional
 
-from models.attribute import Attribute
+from .attribute import Attribute
 
 
 class NewFeatureAttribute:

@@ -16,13 +16,13 @@ from qgis.core import (
     QgsWkbTypes,
 )
 
-from models.attribute import Attribute
-from models.feature import Feature
-from models.feature_set import FeatureSet
-from models.observation import Observation
-from models.segment import Segment
-from models.vertex import Vertex
-from params import Params
+from ..models.attribute import Attribute
+from ..models.feature import Feature
+from ..models.feature_set import FeatureSet
+from ..models.observation import Observation
+from ..models.segment import Segment
+from ..models.vertex import Vertex
+from ..params import Params
 
 
 class SHPFeatureSetDAO:
@@ -116,7 +116,7 @@ class SHPFeatureSetDAO:
 
                     # Create and store the Feicao object
                     feature_object = Feature(
-                        id=feature.id(),
+                        featureId=feature.id(),
                         setId=shapeType,
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
@@ -129,12 +129,13 @@ class SHPFeatureSetDAO:
             else:
                 # Handle singlepart geometries
                 vertex_list = [
-                    Vertex(x=point.x(), y=point.y()) for point in geometry.asPolyline()
+                    Vertex(x=point.x(), y=point.y())
+                    for point in geometry.asPolyline()
                 ]
                 if len(vertex_list) == 1:
                     # Handle point geometries with a degenerate segment
                     feature_object = Feature(
-                        id=feature.id(),
+                        featureId=feature.id(),
                         setId=shapeType,
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
@@ -152,7 +153,7 @@ class SHPFeatureSetDAO:
                 else:
                     # Handle normal geometries
                     feature_object = Feature(
-                        id=feature.id(),
+                        featureId=feature.id(),
                         setId=shapeType,
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
@@ -169,7 +170,9 @@ class SHPFeatureSetDAO:
         return feature_set
 
     # Function to read attributes from a QgsVectorLayer feature
-    def readAttributes(self, layer: QgsVectorLayer, feature_id: int) -> list[Attribute]:
+    def readAttributes(
+        self, layer: QgsVectorLayer, feature_id: int
+    ) -> list[Attribute]:
         feature = next(layer.getFeatures(QgsFeatureRequest(feature_id)))
         attributes = []
 
@@ -191,7 +194,9 @@ class SHPFeatureSetDAO:
                 value = value.toString("yyyy-MM-dd")
 
             attributes.append(
-                Attribute(attr_name=field_name, attr_type=field_type, attr_value=value)
+                Attribute(
+                    attr_name=field_name, attr_type=field_type, attr_value=value
+                )
             )
 
         return attributes
@@ -311,7 +316,9 @@ class SHPFeatureSetDAO:
         shpLayer.updateExtents()
 
     def saveFeatureSet(self, featureSet: FeatureSet, params: Params) -> None:
-        self.createFeatureSet(params.getNomeNovoArquivo(), QgsWkbTypes.PolygonGeometry)
+        self.createFeatureSet(
+            params.getNomeNovoArquivo(), QgsWkbTypes.PolygonGeometry
+        )
         shp_layer = QgsVectorLayer(
             params.getNomeNovoArquivo(), "Hydroflow Results", "ogr"
         )

@@ -1,5 +1,23 @@
 [tool.ruff]
 target-version = "py312"
+line-length = 85
 
 [tool.ruff.lint.isort]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.mypy]
+python_version = "3.12"
+explicit_package_bases = false
+namespace_packages = false
+exclude = [
+  'test',
+  'resources_rc.py'
+]
+
+[[tool.mypy.overrides]]
+module = [
+  'qgis.*',
+  'PyQt5.*',
+]
+ignore_errors = true
+ignore_missing_imports = true

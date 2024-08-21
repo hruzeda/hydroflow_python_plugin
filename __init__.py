@@ -24,7 +24,6 @@
 """
 
 
-# noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name  NOSONAR
     """Load Hydroflow class from file Hydroflow.
 

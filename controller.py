@@ -1,10 +1,10 @@
 from PyQt5.QtCore import Qt
 from qgis.PyQt import QtWidgets
 
-from classificator import Classificator
-from params import Params
-from utils.message import Message
-from utils.shp_feature_set_dao import SHPFeatureSetDAO
+from .classificator import Classificator
+from .params import Params
+from .utils.message import Message
+from .utils.shp_feature_set_dao import SHPFeatureSetDAO
 
 
 class Controller:
@@ -77,7 +77,10 @@ class Controller:
         if result == 0 or result == 1:
             # Obtendo nome do novo arquivo.
             new = QtWidgets.QFileDialog.getSaveFileName(
-                params.origin, "Salvar bacia classificada como", "", "Shape File(*.shp)"
+                params.origin,
+                "Salvar bacia classificada como",
+                "",
+                "Shape File(*.shp)",
             )
             if new != "":
                 params.origin.setCursor(Qt.WaitCursor)

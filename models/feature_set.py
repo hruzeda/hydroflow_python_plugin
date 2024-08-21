@@ -1,8 +1,8 @@
 from typing import Optional
 
-from models.attribute import Attribute
-from models.feature import Feature
-from models.new_feature_attribute import NewFeatureAttribute
+from .attribute import Attribute
+from .feature import Feature
+from .new_feature_attribute import NewFeatureAttribute
 
 
 class FeatureSet:
@@ -16,11 +16,9 @@ class FeatureSet:
         self.obs = None
 
     def getFeature(self, featureId: int) -> Optional[Feature]:
-        if featureId >= 0 and featureId < len(self.featuresList):
+        if 0 <= featureId < len(self.featuresList):
             return self.featuresList[featureId]
-        elif featureId >= len(self.featuresList) and featureId < len(
-            self.featuresList
-        ) + len(self.newFeaturesList):
+        if len(self.featuresList) <= featureId < self.getTotalFeatures():
             return self.newFeaturesList[featureId - len(self.featuresList)]
         return None
 
@@ -30,9 +28,9 @@ class FeatureSet:
         if featureId < len(self.featuresList):
             self.featuresList[featureId].setClassification(flow, strahler, shreve)
         else:
-            self.newFeaturesList[featureId - len(self.featuresList)].setClassification(
-                flow, strahler, shreve
-            )
+            self.newFeaturesList[
+                featureId - len(self.featuresList)
+            ].setClassification(flow, strahler, shreve)
 
     def cleanup(self):
         # Limpando as feiçoes.
@@ -58,7 +56,9 @@ class FeatureSet:
         self.obs = None
 
     def getNewFeatureAttributes(self, featureId: int) -> Optional[Attribute]:
-        index = self.findAttributeIndex(0, self.quantidadeFeicoesNovas - 1, featureId)
+        index = self.findAttributeIndex(
+            0, self.quantidadeFeicoesNovas - 1, featureId
+        )
         if index != -1:
             reg = self.newFeaturesAttributes[index]
             return reg.attribute

@@ -11,11 +11,17 @@
 
 __author__ = "tim@linfiniti.com"
 __date__ = "20/01/2011"
-__copyright__ = "Copyright 2012, Australia Indonesia Facility for " "Disaster Reduction"
+__copyright__ = (
+    "Copyright 2012, Australia Indonesia Facility for " "Disaster Reduction"
+)
 
 import os
 import unittest
-from qgis.core import QgsProviderRegistry, QgsCoordinateReferenceSystem, QgsRasterLayer
+from qgis.core import (
+    QgsProviderRegistry,
+    QgsCoordinateReferenceSystem,
+    QgsRasterLayer,
+)
 
 from .utilities import get_qgis_app
 

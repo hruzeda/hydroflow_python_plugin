@@ -188,6 +188,8 @@ lint:
 	@echo "Running ruff check command with --fix"
 	@echo "------------------------------------"
 	ruff check --fix --config pyproject.toml
+	pylint **/*.py
+	mypy --check-untyped-defs .
 
 format:
 	@echo

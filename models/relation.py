@@ -1,8 +1,8 @@
 from typing import Optional
 
-from models.feature import Feature
-from models.segment import Segment
-from utils.message import Message
+from ..utils.message import Message
+from .feature import Feature
+from .segment import Segment
 
 
 class RelationItem:
@@ -35,7 +35,11 @@ class Relation:
         self.primaryIndex: list[IndexItem] = []
 
     def cleanup(self) -> None:
-        self.__init__(self.log)
+        self.items.clear()
+        self.err.clear()
+        self.mouths.clear()
+        self.index.clear()
+        self.primaryIndex.clear()
 
     def insert(
         self,
@@ -52,7 +56,9 @@ class Relation:
             middle = (start + end) // 2
 
             # Lendo o item do meio.
-            middle_item = self.items[middle] if relation_type == 0 else self.err[middle]
+            middle_item = (
+                self.items[middle] if relation_type == 0 else self.err[middle]
+            )
 
             # Comparando os itens.
             comparison = self.compare_position(item, middle_item)
@@ -66,7 +72,9 @@ class Relation:
                     else:
                         self.err.insert(middle, item)
                 elif start < middle:  # (meio > 0)
-                    self.insert(start, middle - 1, source, destination, relation_type)
+                    self.insert(
+                        start, middle - 1, source, destination, relation_type
+                    )
                 else:  # É inicio da lista (meio = 0).
                     if relation_type == 0:
                         self.items.insert(0, item)
@@ -80,14 +88,18 @@ class Relation:
                     elif start == end:
                         self.items.insert(middle, item)
                     else:
-                        self.insert(middle + 1, end, source, destination, relation_type)
+                        self.insert(
+                            middle + 1, end, source, destination, relation_type
+                        )
                 else:  # Cadastrar relações indesejadas.
                     if middle == len(self.err) - 1:  # Se meio é ultimo elemento.
                         self.err.append(item)
                     elif start == end:
                         self.err.insert(middle, item)
                     else:
-                        self.insert(middle + 1, end, source, destination, relation_type)
+                        self.insert(
+                            middle + 1, end, source, destination, relation_type
+                        )
 
     def addMouth(self, basin: Segment, boundary: Segment) -> None:
         # Garantindo que o primeiro argumento é da bacia.
@@ -104,7 +116,7 @@ class Relation:
         # Garantindo que a foz não foi incluida antes.
         found = False
         for i in range(len(self.mouths)):
-            if item.source.idFeicao == self.mouths[i].source.featureId:
+            if item.source.featureId == self.mouths[i].source.featureId:
                 found = True
                 break
 
@@ -139,7 +151,9 @@ class Relation:
         ):
             if relation_type == 0:  # Escosta.
                 if len(self.items) == 0:
-                    self.items.append(RelationItem(source, destination, relation_type))
+                    self.items.append(
+                        RelationItem(source, destination, relation_type)
+                    )
                 else:
                     self.insert(
                         0, len(self.items) - 1, source, destination, relation_type
@@ -159,7 +173,9 @@ class Relation:
         result = []
 
         # Obtendo o índice primário.
-        primaryIndex = self.findPrimaryIndex(0, len(self.primaryIndex) - 1, featureId)
+        primaryIndex = self.findPrimaryIndex(
+            0, len(self.primaryIndex) - 1, featureId
+        )
         if primaryIndex >= 0:
             reached_end = False
             evaluate = False
@@ -174,7 +190,7 @@ class Relation:
                 # Obtendo o índice do evento.
                 primaryItem = self.index[primaryIndex]
 
-                if primaryItem.feature.id == featureId:
+                if primaryItem.feature.featureId == featureId:
                     # Lendo evento.
                     eventItem = self.items[primaryItem.value]
 
@@ -235,20 +251,20 @@ class Relation:
             middle = (start + end) // 2
             item = self.primaryIndex[middle]
 
-            if featureId == item.feature.id:
+            if featureId == item.feature.featureId:
                 return item.value
             else:
-                if featureId < item.feature.id:
+                if featureId < item.feature.featureId:
                     return self.findPrimaryIndex(start, middle - 1, featureId)
                 else:
                     return self.findPrimaryIndex(middle + 1, end, featureId)
         return -1
 
     def compareIndexItems(self, a: IndexItem, b: IndexItem) -> bool:
-        if a.feature.id == b.feature.id:
+        if a.feature.featureId == b.feature.featureId:
             if a.value < b.value:
                 return True
-        elif a.feature.id < b.feature.id:
+        elif a.feature.featureId < b.feature.featureId:
             return True
         return False
 
@@ -273,14 +289,12 @@ class Relation:
         indexItem = None
         for i in range(len(self.index)):
             indexItem = self.index[i]
-            if indexItem.feature.id != featureId:
-                featureId = indexItem.feature.id
+            if indexItem.feature.featureId != featureId:
+                featureId = indexItem.feature.featureId
                 self.primaryIndex.append(IndexItem(featureId, i))
 
     def reportUnexpectedRelations(self, log: Message) -> None:
-        msg_1 = (
-            "Erro! Impossível continuar! Encontradas relações topológicas inesperadas."
-        )
+        msg_1 = "Erro! Impossível continuar! Encontradas relações topológicas inesperadas."
         msg_2 = "São esperadas somente relações de encosta, entretanto foram encontradas as relações:"
         msg_3 = "Consulte a documentação deste aplicativo para mais detalhes sobre as relações topológicas esperadas e inesperadas."
         msg_4 = "Confira a topologia e execute o processamento novamente."

@@ -1,11 +1,11 @@
-from models.segment import Segment
-from models.vertex import Vertex
+from .segment import Segment
+from .vertex import Vertex
 
 
 class Feature:
     def __init__(
         self,
-        id=-1,
+        featureId=-1,
         setId=-1,
         mouthFeatureId=-1,
         featureType=0,
@@ -17,8 +17,8 @@ class Feature:
         segments_list=None,
         process=True,
         hasObservation=False,
-    ):
-        self.id = id
+    ) -> None:
+        self.featureId = featureId
         self.setId = setId
         self.mouthFeatureId = mouthFeatureId
         self.featureType = featureType
@@ -31,11 +31,11 @@ class Feature:
         self.process = process
         self.hasObservation = hasObservation
 
-    def setClassification(self, flow: int, strahler: int, shreve: int):
+    def setClassification(self, flow: int, strahler: int, shreve: int) -> None:
         self.flow = flow
         self.strahler = strahler
         self.shreve = shreve
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         self.vertex_list = []
         self.segments_list = []

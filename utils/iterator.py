@@ -1,41 +1,31 @@
 from typing import Optional
 
-from models.feature import Feature
-from models.segment import Segment
-from models.vertex import Vertex
-from utils.geometry import Geometry
+from ..models.feature import Feature
+from ..models.segment import Segment
+from ..models.vertex import Vertex
+from .geometry import Geometry
 
 
 class IteratorRow:
     def __init__(
         self,
-        point: Optional[Vertex] = None,
-        event_type=-1,
-        segmentA: Optional[Segment] = None,
+        point: Vertex,
+        event_type: int,
+        segmentA: Segment,
         segmentB: Optional[Segment] = None,
-    ):
+    ) -> None:
         self.point = point
         self.eventType = event_type
         self.segmentA = segmentA
         self.segmentB = segmentB
 
-    def cleanup(self):
-        self.__init__()
-
 
 class IteratorPoint:
-    def __init__(self, x=-1, y=-1, z=-1):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.segments: list[Segment] = []
+    def __init__(self, point: Vertex, segment: Segment) -> None:
+        self.point = point
+        self.segments = [segment]
 
-    def cleanup(self):
-        self.__init__()
-
-    def insertSegment(
-        self, segment: Segment, start: Optional[int] = 0, end: Optional[int] = 0
-    ):
+    def insertSegment(self, segment: Segment, start: int = 0, end: int = 0) -> None:
         if end == 0:
             end = len(self.segments)
 
@@ -63,16 +53,21 @@ class IteratorPoint:
 
 
 class Iterator:
-    def __init__(self, geo: Geometry):
+    def __init__(self, geo: Geometry) -> None:
         self.geo = geo
         self.rows: list[IteratorRow] = []
         self.points: list[IteratorPoint] = []
 
-    def next(self):
-        if len(self.rows) == 0:
-            return self.rows.pop()
+    def cleanup(self) -> None:
+        self.rows = []
+        self.points = []
 
-    def addRows(self, features: list[Feature], checkFlag=False):
+    def next(self) -> Optional[IteratorRow]:
+        if self.rows:
+            return self.rows.pop()
+        return None
+
+    def addRows(self, features: list[Feature], checkFlag=False) -> None:
         for feature in features:
             if checkFlag and not feature.process:
                 continue
@@ -93,7 +88,7 @@ class Iterator:
                     )
                 )
 
-    def iteratorRowSorter(self, a: IteratorRow, b: IteratorRow):
+    def iteratorRowSorter(self, a: IteratorRow, b: IteratorRow) -> int:
         # Avaliando o indice do item de varredura.
         if self.geo.smallerThan(b.point.x, a.point.x):  # Índice menor primeiro
             return 1
@@ -112,7 +107,7 @@ class Iterator:
         # São de tipos diferentes!
         return 1 if a.eventType == b.eventType else -1
 
-    def iteratorRowComparator(self, iteratorRow: float, point: Vertex):
+    def iteratorRowComparator(self, iteratorRow: float, point: Vertex) -> int:
         if point.withinIteratorRow(iteratorRow, self.geo.tolerance):
             if self.geo.smallerThan(iteratorRow, point.x):
                 return -1
@@ -120,29 +115,18 @@ class Iterator:
         return 0
 
     def sortRows(self) -> None:
-        self.rows.sort(self.iteratorRowSorter)
-
-    def cleanup(self):
-        self.geo = None
-
-        for line in self.rows:
-            line.cleanup()
-        self.rows = []
-
-        for point in self.points:
-            point.cleanup()
-        self.points = []
+        self.rows.sort(self.iteratorRowSorter)  # TODO: bad comparator
 
     def createIteratorPoint(
         self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None
-    ):
+    ) -> IteratorPoint:
         pontoV = Vertex(ponto.x, ponto.y)
         iteratorPoint = IteratorPoint(pontoV, segmentoA)
         if segmentoB:
             iteratorPoint.insertSegment(segmentoB)
         return iteratorPoint
 
-    def iteratorPointComparator(self, primeiro: Vertex, segundo: Vertex):
+    def iteratorPointComparator(self, primeiro: Vertex, segundo: Vertex) -> int:
         if self.geo.equalsTo(a=primeiro, b=segundo):
             if self.geo.equalsTo(aX=primeiro.x, bX=segundo.x):
                 if self.geo.smallerThan(primeiro.y, segundo.y):
@@ -156,7 +140,10 @@ class Iterator:
         return 0
 
     def addIteratorPoint(
-        self, iteratorRow: IteratorRow, start: Optional[int] = 0, end: Optional[int] = 0
+        self,
+        iteratorRow: IteratorRow,
+        start: int = 0,
+        end: int = 0,
     ) -> None:
         iteratorPoint = self.createIteratorPoint(
             iteratorRow.point, iteratorRow.segmentA, iteratorRow.segmentB
@@ -183,14 +170,14 @@ class Iterator:
                 if middle == 0 or start == end:
                     self.points.insert(middle, iteratorPoint)
                 else:
-                    self.addIteratorPoint(iteratorPoint, 0, (middle - 1))
+                    self.addIteratorPoint(iteratorRow, 0, (middle - 1))
             elif comp > 0:  # Ponto > Ponto do meio (incluir depois).
                 if middle == (len(self.points) - 1):  # Ultimo registro.
                     self.points.append(iteratorPoint)
                 elif start == end:
                     self.points.insert((middle + 1), iteratorPoint)
                 else:
-                    self.addIteratorPoint(iteratorPoint, (middle + 1), end)
+                    self.addIteratorPoint(iteratorRow, (middle + 1), end)
 
     def searchIteratorPoint(
         self, start: int, end: int, iteratorRow: float
@@ -206,19 +193,17 @@ class Iterator:
             comp = self.iteratorRowComparator(iteratorRow, item.point.y)
 
             if comp == 0:  # Encontrou!
-                iteratorPoint = item
                 self.points.pop(middle)
+                return item
             elif (
                 comp < 0
             ):  # Linha de varredura é menor que a ordenada do ponto do meio.
                 if middle > 0:
-                    iteratorPoint = self.searchIteratorPoint(
-                        0, (middle - 1), iteratorRow
-                    )
+                    return self.searchIteratorPoint(0, (middle - 1), iteratorRow)
             else:  # Linha de varredura é maior que a ordenada do ponto do meio.
                 if middle < (len(self.points) - 1):
-                    iteratorPoint = self.searchIteratorPoint(
+                    return self.searchIteratorPoint(
                         (middle + 1), (len(self.points) - 1), iteratorRow
                     )
 
-        return iteratorPoint
+        return None

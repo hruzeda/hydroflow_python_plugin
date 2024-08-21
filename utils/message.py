@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QDateTime
 
-from params import Params
+from ..params import Params
 
 
 class Message:

@@ -1,6 +1,6 @@
-from models.segment import Segment
-from utils.geometry import Geometry
-from utils.message import Message
+from ..utils.geometry import Geometry
+from ..utils.message import Message
+from .segment import Segment
 
 
 class Position:
@@ -35,7 +35,9 @@ class Position:
                 if comparison == -1:  # segmento está abaixo.
                     result = self.binarySearch(middle + 1, end, iteratorRow, segment)
                 else:  # comparacao = 1; segmento está acima.
-                    result = self.binarySearch(start, middle - 1, iteratorRow, segment)
+                    result = self.binarySearch(
+                        start, middle - 1, iteratorRow, segment
+                    )
 
         return result
 
@@ -52,7 +54,9 @@ class Position:
             # Mesma altura relativa.
 
             # Avaliando os vértices.
-            if first.isPoint(self.geo.tolerance) or second.isPoint(self.geo.tolerance):
+            if first.isPoint(self.geo.tolerance) or second.isPoint(
+                self.geo.tolerance
+            ):
                 result = first.compareTo(second)
             elif (
                 self.geo.equalsTo(pFirst, first.a)

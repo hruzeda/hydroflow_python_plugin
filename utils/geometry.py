@@ -1,8 +1,8 @@
 from math import sqrt
 from typing import Optional
 
-from models.segment import Segment
-from models.vertex import Vertex
+from ..models.segment import Segment
+from ..models.vertex import Vertex
 
 
 class Geometry:
@@ -18,7 +18,7 @@ class Geometry:
         b: Optional[Vertex] = None,
         aX: Optional[float] = None,
         bX: Optional[float] = None,
-    ):
+    ) -> bool:
         """
         Aplicação da equação reduzida da circunferência.
         Considerções:
@@ -30,7 +30,9 @@ class Geometry:
         """
         if a and b:
             return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) <= self.tolerance
-        return abs(aX - bX) <= self.tolerance
+        if aX and bX:
+            return abs(aX - bX) <= self.tolerance
+        return False
 
     def intersection(self, primeiro: Segment, segundo: Segment) -> Optional[Vertex]:
         """
@@ -66,7 +68,9 @@ class Geometry:
         b = segment.b
 
         # o segmento é vertical. Retorna o vértice com o menor "y"!
-        if segment.isVertical(self.tolerance) or a.withinIteratorRow(x, self.tolerance):
+        if segment.isVertical(self.tolerance) or a.withinIteratorRow(
+            x, self.tolerance
+        ):
             p = Vertex(a.x, a.y)
         else:  # o segmento não é vertical.
             if b.withinIteratorRow(

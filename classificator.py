@@ -1,15 +1,15 @@
 from typing import Optional
 
-from models.feature_set import FeatureSet
-from models.node import Node
-from models.position import Position
-from models.relation import Relation
-from models.segment import Segment
-from models.vertex import Vertex
-from params import Params
-from utils.geometry import Geometry
-from utils.iterator import Iterator, IteratorRow
-from utils.message import Message
+from .models.feature_set import FeatureSet
+from .models.node import Node
+from .models.position import Position
+from .models.relation import Relation
+from .models.segment import Segment
+from .models.vertex import Vertex
+from .params import Params
+from .utils.geometry import Geometry
+from .utils.iterator import Iterator, IteratorRow
+from .utils.message import Message
 
 
 class Classificator:
@@ -158,7 +158,9 @@ class Classificator:
         self.processIteratorPoints(previousIteration)
         self.position.limparPosicao()
 
-    def evaluateSegments(self, point: Vertex, above: Segment, below: Segment) -> None:
+    def evaluateSegments(
+        self, point: Vertex, above: Segment, below: Segment
+    ) -> None:
         intersectionPoint = self.geo.intersection(above, below)
 
         # Verificando se há interseção.
@@ -192,7 +194,7 @@ class Classificator:
                 ):
                     # Inserindo a interseção na lista de varredura.
                     self.iterator.addIteratorPoint(
-                        IteratorRow(intersectionPoint, 2, [above, below])
+                        IteratorRow(intersectionPoint, 2, above, below)
                     )
 
     def processIteratorPoints(self, iteratorLine: int) -> None:
@@ -306,7 +308,7 @@ class Classificator:
                 # Verificando se a feição da foz já foi processada.
                 if currentFeature.mouthFeatureId < 0:
                     # Árvore ainda não processada.
-                    currentFeature.mouthFeatureId = currentFeature.id
+                    currentFeature.mouthFeatureId = currentFeature.featureId
                 else:
                     # Árvore já processada. Existe interconexão entre bacias!
                     basinConnection = True
@@ -452,7 +454,7 @@ class Classificator:
                     self.log.append(
                         msg_1
                         + msg_2
-                        + str(currentFeature.id)
+                        + str(currentFeature.featureId)
                         + msg_3
                         + str(currentFeature.mouthFeatureId)
                         + msg_4
@@ -477,9 +479,9 @@ class Classificator:
                 or (self.params.strahlerOrderType > 0 and feature.strahler == 0)
                 or (self.params.shreveOrderEnabled and feature.shreve == 0)
             ):
-                msg_0 = msg_1 + str(feature.id) + msg_2
+                msg_0 = msg_1 + str(feature.featureId) + msg_2
                 self.log.append(msg_0)
-                self.drainage.obs = (feature.id, msg_3)
+                self.drainage.obs = (feature.featureId, msg_3)
                 feature.hasObservation = True
                 result = 1
 

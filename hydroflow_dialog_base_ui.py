@@ -140,7 +140,9 @@ class Ui_HydroflowDialogBase(object):
         self.groupBox.setTitle(_translate("HydroflowDialogBase", " Opções "))
         self.label.setText(_translate("HydroflowDialogBase", "Unidade do mapa:"))
         self.comboBox.setItemText(0, _translate("HydroflowDialogBase", "Metros"))
-        self.comboBox.setItemText(1, _translate("HydroflowDialogBase", "Quilômetros"))
+        self.comboBox.setItemText(
+            1, _translate("HydroflowDialogBase", "Quilômetros")
+        )
         self.comboBox.setItemText(2, _translate("HydroflowDialogBase", "Pés"))
         self.comboBox.setItemText(3, _translate("HydroflowDialogBase", "Outro"))
         self.label_2.setText(_translate("HydroflowDialogBase", "Tolerância XY:"))
