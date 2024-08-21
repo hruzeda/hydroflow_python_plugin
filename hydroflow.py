@@ -24,13 +24,14 @@
 
 import os.path
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, QTranslator
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 
+from .hydroflow_dialog import HydroflowDialog
+
 # Initialize Qt resources from file resources_rc.py
 from .resources_rc import *  # noqa: F401, F403  NOSONAR
-from .hydroflow_dialog import HydroflowDialog
 
 
 class Hydroflow:
@@ -191,5 +192,5 @@ class Hydroflow:
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
-            # substitute with your code.11
+            # substitute with your code.
             pass

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from models.attribute import Attribute
 from models.feature import Feature
 
@@ -12,7 +14,7 @@ class FeatureSet:
         self.newFeaturesAttributes: list[Attribute] = []
         self.obs = None
 
-    def getFeature(self, featureId):
+    def getFeature(self, featureId: int) -> Optional[Feature]:
         if featureId >= 0 and featureId < len(self.featuresList):
             return self.featuresList[featureId]
         elif featureId >= len(self.featuresList) and featureId < len(

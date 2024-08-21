@@ -19,8 +19,8 @@ from models.attribute import Attribute
 from models.feature import Feature
 from models.feature_set import FeatureSet
 from models.observation import Observation
-from models.params import Params
 from models.vertex import Vertex
+from params import Params
 
 
 class SHPFeatureSetDAO:

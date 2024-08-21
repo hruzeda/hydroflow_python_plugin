@@ -2,9 +2,9 @@ from PyQt5.QtCore import Qt
 from qgis.PyQt import QtWidgets
 
 from classificator import Classificator
-from models.params import Params
-from models.shp_feature_set_dao import SHPFeatureSetDAO
+from params import Params
 from utils.message import Message
+from utils.shp_feature_set_dao import SHPFeatureSetDAO
 
 
 class Controller:
@@ -81,7 +81,7 @@ class Controller:
             )
             if new != "":
                 params.origin.setCursor(Qt.WaitCursor)
-                params.setNomeNovoArquivo(new)
+                params.newFileName = new
                 log.result = new
 
                 # Gravando os arquivos.
@@ -97,8 +97,8 @@ class Controller:
         # formLog.exibirLog()
 
         # Apagando os objetos.
-        classificator.limparHydroflow()
-        boundary.LimparConjuntoFeicao()
-        basin.LimparConjuntoFeicao()
+        classificator.cleanup()
+        boundary.cleanup()
+        basin.cleanup()
 
         return result

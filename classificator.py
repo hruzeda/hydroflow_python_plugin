@@ -1,12 +1,15 @@
 from typing import Optional
 
 from models.feature_set import FeatureSet
-from models.iterator import Iterator, IteratorRow
 from models.node import Node
-from models.params import Params
 from models.position import Position
 from models.relation import Relation
+from models.segment import Segment
+from models.vertex import Vertex
+from params import Params
 from utils.geometry import Geometry
+from utils.iterator import Iterator, IteratorRow
+from utils.message import Message
 
 
 class Classificator:
@@ -15,7 +18,7 @@ class Classificator:
         drainage: Optional[FeatureSet],
         boundary: Optional[FeatureSet],
         params: Params,
-        log,
+        log: Message,
     ) -> None:
         self.drainage = drainage
         self.boundary = boundary
@@ -25,6 +28,10 @@ class Classificator:
         self.topologicalRelations = Relation(log)
         self.position = Position(self.geo, log)
         self.log = log
+
+    def cleanup(self):
+        self.log.cleanup()
+        self.__init__(self.drainage, self.boundary, self.params, self.log)
 
     def classifyWaterBasin(self) -> int:
         """
@@ -45,7 +52,7 @@ class Classificator:
         self.iteratePlane()
 
         # Verificando a existência de relações topológicas inesperadas (toque e interseção).
-        if self.topologicalRelations.haErros():
+        if self.topologicalRelations.err:
             # Listando os eventos estranhos.
             self.topologicalRelations.reportUnexpectedRelations(self.log)
             result = 5
@@ -105,7 +112,7 @@ class Classificator:
                 below = self.position.abaixo(index_A)
                 if below != 0:  # Se há segmento abaixo:
                     self.evaluateSegments(lv.point, record, below)
-            elif lv.getTipoEvento() == 1:
+            elif lv.eventType == 1:
                 # Localizando o segmento em Posicao.
                 index_A = self.position.localizar(iteratorLine, record)
 
@@ -119,13 +126,13 @@ class Classificator:
 
                 # Excluindo de posição.
                 self.position.excluir(index_A)
-            elif lv.getTipoEvento() == 2:  # Interseção.
+            elif lv.eventType == 2:  # Interseção.
                 # Separando interseção por toque.
                 if (
-                    not self.geo.equalsTo(lv.point, lv.segmentA.getA())
-                    and not self.geo.equalsTo(lv.point, lv.segmentA.getB())
-                    and not self.geo.equalsTo(lv.point, lv.segmentB.getA())
-                    and not self.geo.equalsTo(lv.point, lv.segmentB.getB())
+                    not self.geo.equalsTo(lv.point, lv.segmentA.a)
+                    and not self.geo.equalsTo(lv.point, lv.segmentA.b)
+                    and not self.geo.equalsTo(lv.point, lv.segmentB.a)
+                    and not self.geo.equalsTo(lv.point, lv.segmentB.b)
                 ):
                     # Localizando os segmentos.
                     index_A = self.position.localizar(iteratorLine, lv.segmentA)
@@ -144,112 +151,101 @@ class Classificator:
                     if below != 0:  # Se há segmento abaixo:
                         self.evaluateSegments(lv.point, lv.segmentA, below)
 
-            lv.limparVarreduraItem()
+            lv.cleanup()
             lv = self.iterator.next()
 
         # Processando os pontos da ultima linha de varredura.
         self.processIteratorPoints(previousIteration)
         self.position.limparPosicao()
 
-    def evaluateSegments(self, point, above, below) -> None:
-        intersectionPoint = 0
+    def evaluateSegments(self, point: Vertex, above: Segment, below: Segment) -> None:
+        intersectionPoint = self.geo.intersection(above, below)
 
         # Verificando se há interseção.
-        if self.geo.pontoIntersecao(above, below, intersectionPoint):
+        if intersectionPoint:
             # Selecionando a área de interesse para o ponto de interseção.
             if (
-                intersectionPoint.getX() >= (point.getX() - self.geo.getTolerancia())
-                and intersectionPoint.getY()
-                >= (point.getY() - self.geo.getTolerancia())
+                intersectionPoint.x >= (point.x - self.geo.tolerance)
+                and intersectionPoint.y >= (point.y - self.geo.tolerance)
             ) or (
-                intersectionPoint.getX() > (point.getX() + self.geo.getTolerancia())
-                and intersectionPoint.getY() < (point.getY() - self.geo.getTolerancia())
+                intersectionPoint.x > (point.x + self.geo.tolerance)
+                and intersectionPoint.y < (point.y - self.geo.tolerance)
             ):
                 # Separando as interseções do tipo encosta.
                 if not (
                     (
-                        self.geo.equalsTo(intersectionPoint, above.getA())
-                        and self.geo.equalsTo(intersectionPoint, below.getB())
+                        self.geo.equalsTo(intersectionPoint, above.a)
+                        and self.geo.equalsTo(intersectionPoint, below.b)
                     )
                     or (
-                        self.geo.equalsTo(intersectionPoint, above.getB())
-                        and self.geo.equalsTo(intersectionPoint, below.getA())
+                        self.geo.equalsTo(intersectionPoint, above.b)
+                        and self.geo.equalsTo(intersectionPoint, below.a)
                     )
                     or (
-                        self.geo.equalsTo(intersectionPoint, above.getA())
-                        and self.geo.equalsTo(intersectionPoint, below.getA())
+                        self.geo.equalsTo(intersectionPoint, above.a)
+                        and self.geo.equalsTo(intersectionPoint, below.a)
                     )
                     or (
-                        self.geo.equalsTo(intersectionPoint, above.getB())
-                        and self.geo.equalsTo(intersectionPoint, below.getB())
+                        self.geo.equalsTo(intersectionPoint, above.b)
+                        and self.geo.equalsTo(intersectionPoint, below.b)
                     )
                 ):
                     # Inserindo a interseção na lista de varredura.
-                    self.iterator.inserir(
+                    self.iterator.addIteratorPoint(
                         IteratorRow(intersectionPoint, 2, [above, below])
                     )
 
-    def processIteratorPoints(self, iteratorLine):
+    def processIteratorPoints(self, iteratorLine: int) -> None:
         segment = 0
         point = 0
         test = []
 
-        # Obtendo o primiro ponto de varradura.
-        iteratorPoint = self.iterator.getPontoVarredura(iteratorLine)
+        # Obtendo o primeiro ponto de varradura.
+        iteratorPoint = self.iterator.points[iteratorLine]
 
         while iteratorPoint != 0:
-            if iteratorPoint.getQuantidadeSegmentos() > 1:  # Há relações topológicas.
+            if len(iteratorPoint.segments) > 1:  # Há relações topológicas.
                 point = iteratorPoint.point
 
                 # Testando os segmentos.
-                for k in range(iteratorPoint.getQuantidadeSegmentos()):
-                    segment = iteratorPoint.getSegmento(k)
+                for segment in iteratorPoint.segments:
                     test.append(
                         (
-                            self.geo.equalsTo(point, segment.getA())
-                            and (
-                                segment.getA().eExtremo()
-                                or segment.getIdConjunto() == 1
-                            )
+                            self.geo.equalsTo(point, segment.a)
+                            and (segment.a.eExtremo() or segment.setId == 1)
                         )
                         or (
-                            self.geo.equalsTo(point, segment.getB())
-                            and (
-                                segment.getB().eExtremo()
-                                or segment.getIdConjunto() == 1
-                            )
+                            self.geo.equalsTo(point, segment.b)
+                            and (segment.b.eExtremo() or segment.setId == 1)
                         )
                     )
 
                 # Avaliando as relações topológicas.
-                for i in range(iteratorPoint.getQuantidadeSegmentos() - 1):
-                    for j in range(i + 1, iteratorPoint.getQuantidadeSegmentos()):
-                        if test.at(i) and test.at(j):  # Encosta.
+                for i in range(len(iteratorPoint.segments) - 1):
+                    for j in range(i + 1, len(iteratorPoint.segments)):
+                        if test[i] and test[j]:  # Encosta.
                             self.topologicalRelations.addRelation(
-                                iteratorPoint.getSegmento(i),
-                                iteratorPoint.getSegmento(j),
+                                iteratorPoint.segments[i],
+                                iteratorPoint.segments[j],
                                 0,
                             )
-                        elif test.at(i) or test.at(j):  # Toca.
+                        elif test[i] or test[j]:  # Toca.
                             self.topologicalRelations.addRelation(
-                                iteratorPoint.getSegmento(i),
-                                iteratorPoint.getSegmento(j),
+                                iteratorPoint.segments[i],
+                                iteratorPoint.segments[j],
                                 1,
                             )
                         else:  # Intercepta.
                             self.topologicalRelations.addRelation(
-                                iteratorPoint.getSegmento(i),
-                                iteratorPoint.getSegmento(j),
+                                iteratorPoint.segments[i],
+                                iteratorPoint.segments[j],
                                 2,
                             )
 
             # Limpando o ponto de varedura corrente.
-            iteratorPoint.limparPontoVarredura()
+            iteratorPoint.cleanup()
 
-            # Lendo o próximo ponto de varredura.
-            iteratorPoint = self.iterator.getPontoVarredura(iteratorLine)
-
-    def buildTree(self):
+    def buildTree(self) -> int:
         """
         Valores de retorno:
         0 - processamento correto
@@ -261,21 +257,19 @@ class Classificator:
         """
         result = 0
 
-        if self.topologicalRelations.getQuantidadeFozes() > 0:
+        if len(self.topologicalRelations.mouths) > 0:
             # Montando os índices dos eventos.
             self.topologicalRelations.buildIndexes()
 
             # Construindo a árvore que representa cada bacia.
             entrypointRelation = 0
-            filhos = []
-            for i in range(self.topologicalRelations.getQuantidadeFozes()):
-                entrypointRelation = self.topologicalRelations.getFoz(i)
-
+            children = []
+            for entrypointRelation in self.topologicalRelations.mouths:
                 # origem: segmento da foz; destino: segmento do limite.
                 result = self.createNodes(
-                    entrypointRelation.getOrigem(),
-                    entrypointRelation.getDestino(),
-                    filhos,
+                    entrypointRelation.source,
+                    entrypointRelation.destination,
+                    children,
                     result,
                 )[0]
         else:
@@ -283,7 +277,13 @@ class Classificator:
 
         return result
 
-    def createNodes(self, segment, parent, sibling_nodes, result):
+    def createNodes(
+        self,
+        segment: Segment,
+        parent: Segment,
+        sibling_nodes: list[Segment],
+        result: int,
+    ) -> tuple[int, Node]:
         """
         Valores para resultado:
         0 - processamento sem erros
@@ -291,78 +291,76 @@ class Classificator:
         5 - nó em loop
         6 - bacias interconectadas
         """
-        node = 0
+        node = None
 
         if result == 0:
             # Verificando a condição de interconexão entre árvores.
             loopBasin = False
             basinConnection = False
-            currentFeature = self.drainage.getFeicao(segment.getIdFeicao())
+            currentFeature = self.drainage.getFeature(segment.featureId)
 
-            if segment.getEFoz():
+            if segment.isMouth:
                 # A feição corrente é a feição da foz e o segmento pai é do limite da bacia.
                 # É o início do processamento de uma bacia!
 
                 # Verificando se a feição da foz já foi processada.
-                if currentFeature.getIdFeicaoFoz() < 0:
+                if currentFeature.mouthFeatureId < 0:
                     # Árvore ainda não processada.
-                    currentFeature.setIdFeicaoFoz(currentFeature.getId())
+                    currentFeature.mouthFeatureId = currentFeature.id
                 else:
                     # Árvore já processada. Existe interconexão entre bacias!
                     basinConnection = True
             else:
-                if currentFeature.getIdFeicaoFoz() < 0:
-                    currentFeature.setIdFeicaoFoz(
-                        self.drainage.getFeicao(parent.getIdFeicao()).getIdFeicaoFoz()
-                    )
+                if currentFeature.mouthFeatureId < 0:
+                    currentFeature.mouthFeatureId = self.drainage.getFeature(
+                        parent.featureId
+                    ).mouthFeatureId
                 else:
                     # Feição já processada. Existe um loop na árvore!
                     loopBasin = True
 
             # Verificando a condição de loop na árvore ou interconexão entre árvores.
             if not loopBasin and not basinConnection:
-                node = Node(segment.getIdFeicao())
+                node = Node(segment.featureId)
 
                 # Processando o fluxo.
-                if currentFeature.getNSegmentos() > 1:  # Vários segmentos.
-                    if segment.getId() == 0:
-                        node.setFluxo(2)  # Inverter!
+                if len(currentFeature.segments_list) > 1:  # Vários segmentos.
+                    if segment.id == 0:
+                        node.flow = 2  # Inverter!
                     else:
-                        node.setFluxo(1)  # Manter!
+                        node.flow = 1  # Manter!
                 else:  # Segmento único.
                     # Verificando se o vértice "a" do segmento encosta no pai.
-                    if segment.getA().eIgual(parent.getA()) or segment.getA().eIgual(
-                        parent.getB()
-                    ):
-                        if segment.getA().getId() == 0:
-                            node.setFluxo(2)  # Inverter!
+                    if segment.a.eIgual(parent.a) or segment.a.eIgual(parent.b):
+                        if segment.a.id == 0:
+                            node.flow = 2  # Inverter!
                         else:
-                            node.setFluxo(1)  # Manter!
+                            node.flow = 1  # Manter!
                     else:  # Então é o vértice "b" que encosta no pai.
-                        if segment.getB().getId() == 0:
-                            node.setFluxo(2)  # Inverter!
+                        if segment.b.id == 0:
+                            node.flow = 2  # Inverter!
                         else:
-                            node.setFluxo(1)  # Manter!
+                            node.flow = 1  # Manter!
 
                 # Obtendo os filhos.
-                parentID = -1 if parent.getIdConjunto() == 1 else parent.getIdFeicao()
+                parentID = -1 if parent.setId == 1 else parent.featureId
                 childSegments = self.topologicalRelations.findChildSegments(
-                    segment.getIdFeicao(), parentID, sibling_nodes
+                    segment.featureId, parentID, sibling_nodes
                 )
 
                 # Classificando o nó.
-                childNode = 0
+                childNode = None
 
                 # Instanciar o nó com valor inicial 1 para Strahler e Shreve para eliminar a necessidade
                 # de usar os métodos No::setStrahler() e No::setShreve().
                 # Não será necessário avaliar (filhosSegmento.size() == 0).
                 if len(childSegments) == 0:  # Nó sem filhos. É folha!
                     # Classificando por Strahler
-                    if self.params.getTipoOrdemStrahler() > 0:
-                        node.setStrahler(1)
+                    if self.params.strahlerOrderType > 0:
+                        node.strahler = 1
                     # Classificando por Shreve.
-                    if self.params.getEOrdemShreve():
-                        node.setShreve(1)
+                    if self.params.shreveOrderEnabled:
+                        node.shreve = 1
                 elif (
                     len(childSegments) == 1
                 ):  # Fazer classificação do pai igual a do filho.
@@ -375,17 +373,14 @@ class Classificator:
                         node.inserirFilhoNo(childNode)
 
                         # Classificando por Strahler. Passar essa lógica para No::inserirFilhoNo()!
-                        if self.params.getTipoOrdemStrahler() > 0:
+                        if self.params.strahlerOrderType > 0:
                             node.setStrahler(childNode.getStrahler())
 
                         # //Classificando por Shreve. Passar essa lógica para No::inserirFilhoNo()!
-                        if self.params.getEOrdemShreve():
+                        if self.params.shreveOrderEnabled:
                             node.setShreve(childNode.getShreve())
                 else:  # Nó com dois ou mais filhos.
-                    if (
-                        len(childSegments) > 2
-                        and self.params.getTipoOrdemStrahler() == 1
-                    ):
+                    if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
                         # Gravando a mensagem de mais de três afluentes no log.
                         msg_1 = "Aviso! Estrutura topológica não esperada para hierarquização Strahler."
                         msg_2 = " A Feição FID"
@@ -395,7 +390,7 @@ class Classificator:
                         self.log.append(
                             msg_1
                             + msg_2
-                            + str(segment.getIdFeicao())
+                            + str(segment.featureId)
                             + msg_3
                             + "\n"
                             + msg_4
@@ -405,12 +400,12 @@ class Classificator:
                         for i in range(len(childSegments)):
                             filho = childSegments[i]
                             self.log.append(
-                                "   " + str(i + 1) + " - FID" + str(filho.getIdFeicao())
+                                "   " + str(i + 1) + " - FID" + str(filho.featureId)
                             )
                         self.log.append("\n" + msg_5)
 
                         # Configurando a classificação Strahler leve.
-                        self.params.setTipoOrdemStrahler(2)
+                        self.params.strahlerOrderType = 2
 
                     # Cadastrando os nós filhos.
                     for i in range(len(childSegments)):
@@ -424,10 +419,10 @@ class Classificator:
                 # Gravando classificação.
                 if result == 0:
                     self.drainage.setFeatureClassification(
-                        node.getIdFeicao(),
-                        node.getFluxo(),
-                        node.getStrahler(),
-                        node.getShreve(),
+                        node.featureId,
+                        node.flow,
+                        node.strahler,
+                        node.shreve,
                     )
             else:  # Feição já processada!
                 msg_1 = "Erro! impossível continuar! Estrutura topológica não esperada para hierarquização."
@@ -440,9 +435,9 @@ class Classificator:
                     msg_2 = " Existem feições em anel (loop)."
                     msg_4 = (
                         "Verifique as feições: FID"
-                        + str(segment.getIdFeicao())
+                        + str(segment.featureId)
                         + " e FID"
-                        + str(parent.getIdFeicao())
+                        + str(parent.featureId)
                         + "."
                     )
                     # Gravando o erro no log.
@@ -457,9 +452,9 @@ class Classificator:
                     self.log.append(
                         msg_1
                         + msg_2
-                        + str(currentFeature.getId())
+                        + str(currentFeature.id)
                         + msg_3
-                        + str(currentFeature.getIdFeicaoFoz())
+                        + str(currentFeature.mouthFeatureId)
                         + msg_4
                         + "\n\n"
                         + msg_5
@@ -467,7 +462,7 @@ class Classificator:
 
         return result, node
 
-    def evaluateProcessing(self):
+    def evaluateProcessing(self) -> int:
         result = 0
         msg_0 = ""
         msg_1 = "Aviso: a feição FID"
@@ -478,16 +473,13 @@ class Classificator:
         for i in range(self.drainage.getTotalFeatures()):
             feature = self.drainage.getFeature(i)
             if (
-                feature.getFluxo() == 0
-                or (
-                    self.params.getTipoOrdemStrahler() > 0
-                    and feature.getStrahler() == 0
-                )
-                or (self.params.getEOrdemShreve() and feature.getShreve() == 0)
+                feature.flow == 0
+                or (self.params.strahlerOrderType > 0 and feature.strahler == 0)
+                or (self.params.shreveOrderEnabled and feature.shreve == 0)
             ):
-                msg_0 = msg_1 + str(feature.getId()) + msg_2
+                msg_0 = msg_1 + str(feature.id) + msg_2
                 self.log.append(msg_0)
-                self.drainage.setObservacao(feature.getId(), msg_3)
+                self.drainage.obs = (feature.id, msg_3)
                 feature.setTemObservacao(True)
                 result = 1
 

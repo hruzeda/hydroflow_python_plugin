@@ -22,10 +22,11 @@
  ***************************************************************************/
 """
 
-from controller import Controller
-from models.params import Params
-from qgis.PyQt import QtWidgets
 from PyQt5 import QtCore
+from qgis.PyQt import QtWidgets
+
+from controller import Controller
+from params import Params
 
 from .hydroflow_dialog_base_ui import Ui_HydroflowDialogBase
 
@@ -129,12 +130,12 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
                 tipoClassificacaoStrahler = 1
 
             params = Params(
+                self,
                 nomeBacia,
                 nomeLimite,
                 tol,
                 tipoClassificacaoStrahler,
                 self.checkBox_Shreve.isChecked(),
-                self,
             )
 
             # Iniciando o processo.

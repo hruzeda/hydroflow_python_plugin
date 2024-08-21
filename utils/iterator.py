@@ -28,7 +28,7 @@ class IteratorPoint:
         self.x = x
         self.y = y
         self.z = z
-        self.segments = []
+        self.segments: list[Segment] = []
 
     def cleanup(self):
         self.__init__()
