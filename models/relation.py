@@ -245,14 +245,6 @@ class Relation:
             return self.findPrimaryIndex(middle + 1, end, featureId)
         return -1
 
-    def compareIndexItems(self, a: IndexItem, b: IndexItem) -> bool:
-        if a.featureId == b.featureId:
-            if a.value < b.value:
-                return True
-        elif a.featureId < b.featureId:
-            return True
-        return False
-
     def buildIndexes(self) -> None:
         # Montando índice principal.
         self.index.clear()
@@ -264,7 +256,7 @@ class Relation:
             self.index.append(IndexItem(eventItem.destination.featureId, i))
 
         # Ordenando o índice principal.
-        self.index.sort(key=self.compareIndexItems)  # TODO: bad comparator
+        self.index.sort(key=lambda x: x.featureId + x.value)
 
         # Montando o índice primário.
         self.primaryIndex.clear()

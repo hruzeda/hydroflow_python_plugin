@@ -88,24 +88,14 @@ class Iterator:
                     )
                 )
 
-    def iteratorRowSorter(self, a: IteratorRow, b: IteratorRow) -> int:
+    def iteratorRowSorter(self, a: IteratorRow) -> tuple[int, int]:
         # Avaliando o indice do item de varredura.
-        if self.geo.smallerThan(b.point.x, a.point.x):  # Índice menor primeiro
-            return 1
-        if self.geo.equalsTo(a.point.x, b.point.x):
-            # Avaliando o tipo dos eventos
-            if a.eventType == 0 and b.eventType == 0:  # São do mesmo tipo: entrada!
-                # Avaliando altura na linha de varredura (y).
-                return 1 if self.geo.smallerThan(b.point.y, a.point.y) else -1
-            if a.eventType == 1 and b.eventType == 1:  # São do mesmo tipo: saída!
-                xA = a.segmentA.getSmallerX(self.geo.tolerance)
-                xB = b.segmentA.getSmallerX(self.geo.tolerance)
-                return (
-                    1 if self.geo.smallerThan(xB, xA) else -1
-                )  # Entra depois, sai depois!
-
-        # São de tipos diferentes!
-        return 1 if a.eventType == b.eventType else -1
+        result = a.point.x
+        if a.eventType == 0:
+            result += a.point.y
+        if a.eventType == 1:
+            result += a.segmentA.getSmallerX(self.geo.tolerance)
+        return a.eventType, result
 
     def iteratorRowComparator(self, iteratorRow: float, point: Vertex) -> int:
         if point.withinIteratorRow(iteratorRow, self.geo.tolerance):
@@ -115,7 +105,7 @@ class Iterator:
         return 0
 
     def sortRows(self) -> None:
-        self.rows.sort(self.iteratorRowSorter)  # TODO: bad comparator
+        self.rows.sort(self.iteratorRowSorter)
 
     def createIteratorPoint(
         self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None
