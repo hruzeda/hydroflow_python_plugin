@@ -105,7 +105,7 @@ class Iterator:
         return 0
 
     def sortRows(self) -> None:
-        self.rows.sort(self.iteratorRowSorter)
+        self.rows.sort(key=self.iteratorRowSorter)
 
     def createIteratorPoint(
         self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None
@@ -136,7 +136,7 @@ class Iterator:
         iteratorPoint = self.createIteratorPoint(
             iteratorRow.point, iteratorRow.segmentA, iteratorRow.segmentB
         )
-        if len(self.points) == 0:
+        if not self.points:
             self.points.append(iteratorPoint)
         elif end == 0:
             end = len(self.points)

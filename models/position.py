@@ -14,7 +14,7 @@ class Position:
         self.list.clear()
 
     def delete(self, indice: int) -> None:
-        if indice < len(self.list):
+        if self.list and indice < len(self.list):
             self.list.pop(indice)
 
     def locate(self, linhaVarredura: float, segmento: Segment) -> int:
@@ -121,7 +121,7 @@ class Position:
 
     def insert(self, segment: Segment) -> int:
         index = -1
-        if len(self.list) == 0:
+        if not self.list:
             self.list.append(segment)
             index = 0
         else:
@@ -173,14 +173,14 @@ class Position:
 
     def above(self, index: int) -> Optional[Segment]:
         result = None
-        if 0 > index < len(self.list):
+        if 0 < index < len(self.list):
             index -= 1
             result = self.list[index]
         return result
 
     def below(self, index: int) -> Optional[Segment]:
         result = None
-        if 0 >= index < len(self.list) - 1:
+        if 0 <= index < len(self.list) - 1:
             index += 1
             result = self.list[index]
         return result

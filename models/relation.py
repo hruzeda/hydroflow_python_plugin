@@ -143,7 +143,7 @@ class Relation:
             and destination.setId == 0
         ):
             if relation_type == 0:  # Escosta.
-                if len(self.items) == 0:
+                if not self.items:
                     self.items.append(
                         RelationItem(source, destination, relation_type)
                     )
@@ -152,7 +152,7 @@ class Relation:
                         0, len(self.items) - 1, source, destination, relation_type
                     )
             else:  # Tipo de evento errado. Incluindo na lista de erros.
-                if len(self.err) == 0:
+                if not self.err:
                     self.err.append(RelationItem(source, destination, relation_type))
                 else:
                     self.insert(

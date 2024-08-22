@@ -22,7 +22,9 @@
  ***************************************************************************/
 """
 
-from PyQt5 import QtCore
+import traceback
+
+from qgis.core import QgsMessageLog
 from qgis.PyQt import QtWidgets
 
 from .controller import Controller
@@ -31,9 +33,9 @@ from .params import Params
 
 
 class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """Constructor."""
-        super(HydroflowDialog).__init__(parent)
+        super(HydroflowDialog, self).__init__(parent)
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -41,18 +43,22 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-    def get_path(self, titulo):
+    def get_path(self, titulo: str) -> str:
         return QtWidgets.QFileDialog.getOpenFileName(
-            self, titulo, "", "Shape File(*.shp)"
-        )
+            self, titulo, "", "Shape File (*.shp)"
+        )[0]
 
-    def on_pushButton_HidLn_clicked(self):
-        self.lineEdit_HidLn.setText(self.get_path("Arquivo da rede de drenagem"))
+    def on_pushButton_HidLn_clicked(self) -> None:
+        path = self.get_path("Arquivo da rede de drenagem")
+        if path:
+            self.lineEdit_HidLn.setText(str(path))
 
-    def on_pushButton_Lim_clicked(self):
-        self.lineEdit_Lim.setText(self.get_path("Arquivo da rede de drenagem"))
+    def on_pushButton_Lim_clicked(self) -> None:
+        path = self.get_path("Arquivo da rede de drenagem")
+        if path:
+            self.lineEdit_Lim.setText(path)
 
-    def on_comboBox_currentIndexChanged(self, index):
+    def on_comboBox_currentIndexChanged(self, index: int) -> None:
         if index == 0:
             self.lineEdit_TolXY.setText("0.001")
         elif index == 1:
@@ -62,7 +68,7 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
         elif index == 3:
             self.lineEdit_TolXY.setText("0.001")
 
-    def on_checkBox_FlowOnly_stateChanged(self, CBState):
+    def on_checkBox_FlowOnly_stateChanged(self, CBState: str) -> None:
         if CBState == "checked":
             self.checkBox_Strahler.setChecked(False)
             self.checkBox_Strahler.setEnabled(False)
@@ -74,78 +80,74 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
             self.checkBox_Shreve.setEnabled(True)
             self.checkBox_Shreve.setChecked(True)
 
-    def avaliarInferencia(self):
+    def evaluateInference(self) -> None:
         if (
             not self.checkBox_Strahler.isChecked()
             and not self.checkBox_Shreve.isChecked()
         ):
             self.checkBox_FlowOnly.setChecked(True)
 
-    def on_pushButton_Close_clicked(self):
-        QtCore.QCoreApplication.instance().exit(0)
+    def on_checkBox_Strahler_clicked(self) -> None:
+        self.evaluateInference()
 
-    def on_checkBox_Strahler_clicked(self):
-        self.avaliarInferencia()
+    def on_checkBox_Shreve_clicked(self) -> None:
+        self.evaluateInference()
 
-    def on_checkBox_Shreve_clicked(self):
-        if not self.checkBox_Shreve.isChecked():
-            self.avaliarInferencia()
-
-    def on_pushButton_Exec_clicked(self):
+    def on_pushButton_Exec_clicked(self) -> None:
         try:
-            nomeBacia = self.lineEdit_HidLn.text()
-            nomeLimite = self.lineEdit_Lim.text()
+            drainageFileName = self.lineEdit_HidLn.text()
+            boundaryFileName = self.lineEdit_Lim.text()
 
             # Validando a tolerância.
-            if self.lineEdit_TolXY.text().isEmpty():
+            if not self.lineEdit_TolXY.text():
                 self.lineEdit_TolXY.setText("0")
 
             try:
-                tol = float(self.lineEdit_TolXY.text())
+                tolerance = float(self.lineEdit_TolXY.text())
             except ValueError:
-                tol = -1
+                tolerance = -1
 
-            if tol < 0:
-                self.exibirMensagem(4)
+            if tolerance < 0:
+                self.displayMessage(4)
                 return
 
             # Validando arquivos.
             # Determinando o tipo de classificação Strahler.
-            tipoClassificacaoStrahler = 0
+            strahlerClassificationType = 0
 
             # A opção de classificação Strahler relaxada não está disponível
             # no formulário (tipoClassificacaoStrahler = 2).
-            tipoClassificacaoStrahler = 0
+            strahlerClassificationType = 0
             if self.checkBox_Strahler.isChecked():
-                tipoClassificacaoStrahler = 1
+                strahlerClassificationType = 1
 
             params = Params(
                 self,
-                nomeBacia,
-                nomeLimite,
-                tol,
-                tipoClassificacaoStrahler,
+                drainageFileName,
+                boundaryFileName,
+                tolerance,
+                strahlerClassificationType,
                 self.checkBox_Shreve.isChecked(),
             )
 
             con = Controller(params)
 
-            if not con.validateFile(nomeBacia, "drenagem"):
-                self.exibirMensagem(2)
+            if not con.validateFile(drainageFileName, "drenagem"):
+                self.displayMessage(2)
                 return
 
-            if not con.validateFile(nomeLimite, "limite"):
-                self.exibirMensagem(3)
+            if not con.validateFile(boundaryFileName, "limite"):
+                self.displayMessage(3)
                 return
 
             # Iniciando o processo.
             resultado = con.classifyWaterBasin(params)
-            self.exibirMensagem(resultado)  # Valores para resultado: 0, 2, 3 ou 9.
-        except Exception as e:
-            print(e)
-            self.exibirMensagem(5)
+            self.displayMessage(resultado)  # Valores para resultado: 0, 2, 3 ou 9.
+        except Exception:
+            QgsMessageLog.logMessage(traceback.format_exc(), "Hydroflow")
+            self.displayMessage(5)
 
-    def exibirMensagem(self, codigo):
+    def displayMessage(self, error_code):
         """
         Códigos:
         0 - SEM MENSAGEM.
@@ -155,17 +157,17 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
         4 - O valor da Tolerância XY não pode ser negativo!
         """
         title = "Atenção"
-        if codigo == 1:
+        if error_code == 1:
             QtWidgets.QMessageBox.warning(
                 self, title, "Os dois arquivos de entrada são iguais!"
             )
-        elif codigo == 2:
+        elif error_code == 2:
             QtWidgets.QMessageBox.warning(
                 self,
                 title,
                 "Arquivo da rede de drenagem inválido ou não pode ser acessado!",
             )
-        elif codigo == 3:
+        elif error_code == 3:
             QtWidgets.QMessageBox.warning(
                 self,
                 title,
@@ -174,11 +176,11 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
                     "não pode ser acessado!"
                 ),
             )
-        elif codigo == 4:
+        elif error_code == 4:
             QtWidgets.QMessageBox.warning(
                 self, title, "O valor da Tolerância XY não pode ser negativo!"
             )
-        elif codigo == 5:
+        elif error_code == 5:
             QtWidgets.QMessageBox.warning(
                 self,
                 title,

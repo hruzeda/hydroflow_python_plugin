@@ -36,21 +36,17 @@ LOCALES =
 
 
 # translation
-SOURCES = \
-	__init__.py \
-	hydroflow.py hydroflow_dialog.py resources_rc.py hydroflow_dialog_base_ui.py
+SOURCES = __init__.py classificator.py controller.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py models/__init__.py models/attribute.py models/feature_set.py models/feature.py models/new_feature_attribute.py models/node.py models/observation.py models/position.py models/relation.py models/segment.py models/vertex.py utils/__init__.py utils/geometry.py utils/iterator.py utils/message.py utils/shp_feature_set_dao.py
 
 PLUGINNAME = hydroflow
 
-PY_FILES = \
-	__init__.py \
-	hydroflow.py hydroflow_dialog.py resources_rc.py hydroflow_dialog_base_ui.py
+PY_FILES = __init__.py classificator.py controller.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py
 
 UI_FILES = hydroflow_dialog_base.ui
 
 EXTRAS = metadata.txt hydroflow.ico hydroflow.gif search.ico
 
-EXTRA_DIRS =
+EXTRA_DIRS = models utils
 
 COMPILED_RESOURCE_FILES = resources_rc.py
 
@@ -65,7 +61,7 @@ PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=C:\Users\henrique\AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
+QGISDIR=C:/Users/henrique/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
 
 #################################################
 # Normally you would not need to edit below here
@@ -125,6 +121,7 @@ deploy: compile
 	cp -vf $(UI_FILES) $(QGISDIR)/$(PLUGINNAME)
 	cp -vf $(COMPILED_RESOURCE_FILES) $(QGISDIR)/$(PLUGINNAME)
 	cp -vf $(EXTRAS) $(QGISDIR)/$(PLUGINNAME)
+	cp -rvf ${EXTRA_DIRS} $(QGISDIR)/$(PLUGINNAME)
 
 # The dclean target removes compiled python files from plugin directory
 # also deletes any .git entry

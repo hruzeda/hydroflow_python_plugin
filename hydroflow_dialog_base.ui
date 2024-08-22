@@ -13,31 +13,7 @@
   <property name="windowTitle">
    <string>Hydroflow</string>
   </property>
-  <widget class="QPushButton" name="pushButton_Close">
-   <property name="geometry">
-    <rect>
-     <x>347</x>
-     <y>220</y>
-     <width>88</width>
-     <height>28</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>Fechar</string>
-   </property>
-   <property name="flat">
-    <bool>false</bool>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton_Exec">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="geometry">
     <rect>
      <x>347</x>

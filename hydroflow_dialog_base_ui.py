@@ -13,7 +13,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_HydroflowDialogBase(object):
     def __init__(self):
-        self.pushButton_Close = QtWidgets.QPushButton(self)
         self.pushButton_Exec: QtWidgets.QPushButton
         self.groupBox_Lim: QtWidgets.QGroupBox
         self.lineEdit_Lim: QtWidgets.QLineEdit
@@ -34,15 +33,7 @@ class Ui_HydroflowDialogBase(object):
     def setupUi(self, HydroflowDialogBase):
         HydroflowDialogBase.setObjectName("HydroflowDialogBase")
         HydroflowDialogBase.resize(464, 276)
-        self.pushButton_Close = QtWidgets.QPushButton(HydroflowDialogBase)
-        self.pushButton_Close.setGeometry(QtCore.QRect(347, 220, 88, 28))
-        font = QtGui.QFont()
-        font.setBold(True)
-        self.pushButton_Close.setFont(font)
-        self.pushButton_Close.setFlat(False)
-        self.pushButton_Close.setObjectName("pushButton_Close")
         self.pushButton_Exec = QtWidgets.QPushButton(HydroflowDialogBase)
-        self.pushButton_Exec.setEnabled(False)
         self.pushButton_Exec.setGeometry(QtCore.QRect(347, 162, 88, 28))
         font = QtGui.QFont()
         font.setBold(True)
@@ -132,7 +123,6 @@ class Ui_HydroflowDialogBase(object):
         HydroflowDialogBase.setWindowTitle(
             _translate("HydroflowDialogBase", "Hydroflow")
         )
-        self.pushButton_Close.setText(_translate("HydroflowDialogBase", "Fechar"))
         self.pushButton_Exec.setText(_translate("HydroflowDialogBase", "Executar"))
         self.groupBox_Lim.setTitle(
             _translate("HydroflowDialogBase", " Limite da área ")

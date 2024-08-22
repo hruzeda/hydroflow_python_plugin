@@ -348,7 +348,7 @@ class Classificator:
                 # Instanciar o nó com valor inicial 1 para Strahler e Shreve
                 # para eliminar a necessidade de definit os valores para os nós.
                 # Não será necessário avaliar (filhosSegmento.size() == 0).
-                if len(childSegments) == 0:  # Nó sem filhos. É folha!
+                if not childSegments:  # Nó sem filhos. É folha!
                     # Classificando por Strahler
                     if self.params.strahlerOrderType > 0:
                         node.strahler = 1

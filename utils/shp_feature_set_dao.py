@@ -56,13 +56,14 @@ class SHPFeatureSetDAO:
                 p = 0
                 for part in geometry.parts():
                     vertex_list = []
-                    for pointIndex, point in enumerate(part.vertices()):
+                    iterator = part.vertices()
+                    for point in iterator:
                         vertex_list.append(
                             Vertex(
                                 vertexId=p,
                                 x=point.x(),
                                 y=point.y(),
-                                last=pointIndex == len(part.vertices()) - 1,
+                                last=iterator.hasNext(),
                             )
                         )
                         p += 1

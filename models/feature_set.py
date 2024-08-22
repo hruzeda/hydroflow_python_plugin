@@ -13,7 +13,7 @@ class FeatureSet:
         self,
         featureSetId: Optional[int],
         fileName: str,
-        typeCode: Qgis.WbkType,
+        typeCode: Qgis.WkbType,
         obs: Observation,
     ) -> None:
         self.featureSetId = featureSetId
