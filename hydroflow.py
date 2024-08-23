@@ -38,7 +38,7 @@ from .resources_rc import *  # noqa: F401, F403  NOSONAR
 class Hydroflow:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
+    def __init__(self, iface) -> None:
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -60,16 +60,16 @@ class Hydroflow:
             QCoreApplication.installTranslator(self.translator)
 
         # Declare instance attributes
-        self.actions = []
+        self.actions: list[QAction] = []
         self.menu = self.tr("&Hydroflow")
         self.dlg: Optional[HydroflowDialog] = None
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
+        self.first_start: Optional[bool] = None
 
     # noinspection PyMethodMayBeStatic
-    def tr(self, message):
+    def tr(self, message) -> str:
         """Get the translation for a string using Qt translation API.
 
         We implement this ourselves since we do not inherit QObject.
@@ -94,7 +94,7 @@ class Hydroflow:
         status_tip=None,
         whats_this=None,
         parent=None,
-    ):
+    ) -> QAction:
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -156,7 +156,7 @@ class Hydroflow:
 
         return action
 
-    def initGui(self):  # NOSONAR
+    def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ":hydroflow.ico"
@@ -170,13 +170,13 @@ class Hydroflow:
         # will be set False in run()
         self.first_start = True
 
-    def unload(self):
+    def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(self.tr("&Hydroflow"), action)
             self.iface.removeToolBarIcon(action)
 
-    def run(self):
+    def run(self) -> None:
         """Run method that performs all the real work"""
 
         # Create the dialog with elements (after translation) and keep reference
@@ -187,9 +187,12 @@ class Hydroflow:
             self.dlg = HydroflowDialog()
 
         # show the dialog
-        self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
+        result = None
+        if self.dlg:
+            self.dlg.show()
+            # Run the dialog event loop
+            result = self.dlg.exec_()
+
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and

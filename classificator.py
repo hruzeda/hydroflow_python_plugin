@@ -111,7 +111,7 @@ class Classificator:
                     self.evaluateSegments(lv.point, record, below)
             elif lv.eventType == 1:
                 # Localizando o segmento em Posicao.
-                index_A = self.position.locate(iteratorLine, record)
+                index_A = self.position.locate(record)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
@@ -133,8 +133,8 @@ class Classificator:
                     and not self.geo.equalsTo(lv.point, lv.segmentB.b)
                 ):
                     # Localizando os segmentos.
-                    index_A = self.position.locate(iteratorLine, lv.segmentA)
-                    index_B = self.position.locate(iteratorLine, lv.segmentB)
+                    index_A = self.position.locate(lv.segmentA)
+                    index_B = self.position.locate(lv.segmentB)
 
                     # Trocando segmentos de posição .
                     self.position.swap(index_A, index_B)
@@ -194,13 +194,12 @@ class Classificator:
                         IteratorRow(intersectionPoint, 2, above, below)
                     )
 
-    def processIteratorPoints(self, iteratorLine: int) -> None:
+    def processIteratorPoints(self, iteratorLine: float) -> None:
         test = []
 
         # Obtendo o primeiro ponto de varradura.
-        iteratorPoint = self.iterator.points[iteratorLine]
-
-        while iteratorPoint != 0:
+        iteratorPoint = self.iterator.searchIteratorPoint(iteratorLine)
+        while iteratorPoint:
             if len(iteratorPoint.segments) > 1:  # Há relações topológicas.
                 point = iteratorPoint.point
 
@@ -238,6 +237,8 @@ class Classificator:
                                 iteratorPoint.segments[j],
                                 2,
                             )
+
+            iteratorPoint = self.iterator.searchIteratorPoint(iteratorLine)
 
     def buildTree(self) -> int:
         """

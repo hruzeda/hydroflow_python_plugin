@@ -35,7 +35,7 @@ from .params import Params
 class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
     def __init__(self, parent=None) -> None:
         """Constructor."""
-        super(HydroflowDialog, self).__init__(parent)
+        super(HydroflowDialog, self).__init__(parent)  # type: ignore # pylint: disable=super-with-arguments,too-many-function-args
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -143,7 +143,7 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
             # Iniciando o processo.
             resultado = con.classifyWaterBasin(params)
             self.displayMessage(resultado)  # Valores para resultado: 0, 2, 3 ou 9.
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             QgsMessageLog.logMessage(traceback.format_exc(), "Hydroflow")
             self.displayMessage(5)
 

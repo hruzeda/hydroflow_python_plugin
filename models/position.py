@@ -17,33 +17,11 @@ class Position:
         if self.list and indice < len(self.list):
             self.list.pop(indice)
 
-    def locate(self, linhaVarredura: float, segmento: Segment) -> int:
-        return self.binarySearch(0, len(self.list) - 1, linhaVarredura, segmento)
-
-    def binarySearch(
-        self, start: int, end: int, iteratorRow: float, segment: Segment
-    ) -> int:
-        result = -1  # Não encontrou.
-
-        if start <= end < len(self.list):
-            middle = round((start + end) / 2)
-            segItem = self.list[middle]
-
-            # Comparando segmento com item central.
-            if segment.compareTo(segItem) == 0:
-                result = middle
-            else:
-                # Avaliando as posições.
-                comparison = self.comparePosition(iteratorRow, segment, segItem)
-
-                if comparison == -1:  # segmento está abaixo.
-                    result = self.binarySearch(middle + 1, end, iteratorRow, segment)
-                else:  # comparacao = 1; segmento está acima.
-                    result = self.binarySearch(
-                        start, middle - 1, iteratorRow, segment
-                    )
-
-        return result
+    def locate(self, segment: Segment) -> int:
+        for i, item in enumerate(self.list):
+            if segment.compareTo(item) == 0:
+                return i
+        return -1
 
     def comparePosition(
         self, iteratorRow: float, first: Segment, second: Segment
@@ -120,56 +98,21 @@ class Position:
         return result
 
     def insert(self, segment: Segment) -> int:
-        index = -1
         if not self.list:
             self.list.append(segment)
-            index = 0
-        else:
-            stop = False
-            start = 0
-            end = len(self.list) - 1
-            iteratorRow = segment.a.x
+            return 0
 
-            while not stop:
-                # Calculando o meio (indice).
-                middle = round((start + end) / 2)
+        for i, item in enumerate(self.list):
+            comparison = self.comparePosition(segment.a.x, segment, item)
 
-                # Lendo o registro do meio.
-                middleSegment = self.list[middle]
+            if comparison == 0:
+                return i
+            if comparison < 0:
+                self.list.insert(i, segment)
+                return i
 
-                # Comparando o registro com o segmento do resistro do meio.
-                comparison = self.comparePosition(
-                    iteratorRow, segment, middleSegment
-                )
-
-                # registro < segMeio. Iserir após o meio.
-                if comparison < 0:
-                    if middle == end:
-                        if middle == len(self.list) - 1:
-                            self.list.append(segment)
-                            index = len(self.list) - 1
-                            stop = True
-                        else:
-                            index = middle + 1
-                            self.list.insert(index, segment)
-                            stop = True
-                    else:
-                        start = middle + 1
-
-                # registro > segMeio. Iserir antes o meio.
-                elif comparison > 0:
-                    if start == middle:
-                        index = middle
-                        self.list.insert(index, segment)
-                        stop = True
-                    else:
-                        end = middle - 1
-
-                else:  # Já está incluido.
-                    index = middle
-                    stop = True
-
-        return index
+        self.list.append(segment)
+        return len(self.list) - 1
 
     def above(self, index: int) -> Optional[Segment]:
         result = None

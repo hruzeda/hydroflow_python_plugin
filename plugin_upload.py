@@ -10,7 +10,7 @@ import sys
 import xmlrpc.client
 from optparse import OptionParser
 
-from future import standard_library
+from future import standard_library  # type: ignore
 
 standard_library.install_aliases()
 

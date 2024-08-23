@@ -190,13 +190,13 @@ lint:
 	@echo "------------------------------------"
 	@echo "Running pylint"
 	@echo "------------------------------------"
-	pylint -rn -sn **/*.py
+	pylint -rn -sn --ignore-paths test --ignore hydroflow_dialog_base_ui.py,hydroflow.py,plugin_upload.py,resources_rc.py **/*.py
 
 	@echo
 	@echo "------------------------------------"
 	@echo "Running mypy"
 	@echo "------------------------------------"
-	mypy --check-untyped-defs .
+	mypy --config-file .\pyproject.toml --exclude hydroflow_dialog_base_ui.py .
 
 format:
 	@echo

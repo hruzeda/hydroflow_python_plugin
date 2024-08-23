@@ -26,30 +26,20 @@ class IteratorPoint:
         self.segments = [segment]
 
     def insertSegment(self, segment: Segment, start: int = 0, end: int = 0) -> None:
-        if end == 0:
-            end = len(self.segments)
-
-        if start < end:
-            # Obtendo o registro central.
-            middle = round((start + end) / 2)
-            item = self.segments[middle]
-
-            # Comparando os segmentos.
+        i = start
+        while i < min(end, len(self.segments)):
+            item = self.segments[i]
             comp = segment.compareTo(item)
 
-            # Segmento menor que item central.
+            if comp == 0:
+                return
             if comp < 0:
-                if middle == 0 or start == end:
-                    self.segments.append(segment)
-                else:
-                    self.insertSegment(segment, 0, (middle - 1))
+                self.segments.insert(i, segment)
+                return
 
-            # Segmento maior que item central.
-            elif comp > 0:
-                if start < end:
-                    self.insertSegment(segment, (middle + 1), end)
-                else:
-                    self.segments.append(segment)
+            i += 1
+
+        self.segments.append(segment)
 
 
 class Iterator:
@@ -136,62 +126,27 @@ class Iterator:
         iteratorPoint = self.createIteratorPoint(
             iteratorRow.point, iteratorRow.segmentA, iteratorRow.segmentB
         )
-        if not self.points:
-            self.points.append(iteratorPoint)
-        elif end == 0:
-            end = len(self.points)
 
-        if start < end:
-            # Obtendo o registro central.
-            middle = round((start + end) / 2)
-            item = self.points[middle]
-
-            # Comparando os pontos.
+        i = start
+        while i < min(end, len(self.points)):
+            item = self.points[i]
             comp = self.iteratorPointComparator(iteratorRow.point, item.point)
 
             if comp == 0:  # São iguais.
-                # Inserindo os segmentos no ponto de varredura existente.
                 item.insertSegment(iteratorRow.segmentA)
                 if iteratorRow.segmentB:  # Interseção.
                     item.insertSegment(iteratorRow.segmentB)
-            elif comp < 0:  # Ponto < Ponto do meio (incluir antes).
-                if middle == 0 or start == end:
-                    self.points.insert(middle, iteratorPoint)
-                else:
-                    self.addIteratorPoint(iteratorRow, 0, (middle - 1))
-            elif comp > 0:  # Ponto > Ponto do meio (incluir depois).
-                if middle == (len(self.points) - 1):  # Ultimo registro.
-                    self.points.append(iteratorPoint)
-                elif start == end:
-                    self.points.insert((middle + 1), iteratorPoint)
-                else:
-                    self.addIteratorPoint(iteratorRow, (middle + 1), end)
+                return
+            if comp < 0:
+                self.points.insert(i, iteratorPoint)
+                return
 
-    def searchIteratorPoint(
-        self, start: int, end: int, iteratorRow: float
-    ) -> Optional[IteratorPoint]:
-        if start <= end:
-            # Calculando o meio (indice).
-            middle = round((start + end) / 2)
+            i += 1
 
-            # Lendo o registro do meio.
-            item = self.points[middle]
+        self.points.append(iteratorPoint)
 
-            # Analisando a linha de varredura do registro do meio.
-            comp = self.iteratorRowComparator(iteratorRow, item.point.y)
-
-            if comp == 0:  # Encontrou!
-                self.points.pop(middle)
-                return item
-            if (
-                comp < 0
-            ):  # Linha de varredura é menor que a ordenada do ponto do meio.
-                if middle > 0:
-                    return self.searchIteratorPoint(0, (middle - 1), iteratorRow)
-            else:  # Linha de varredura é maior que a ordenada do ponto do meio.
-                if middle < (len(self.points) - 1):
-                    return self.searchIteratorPoint(
-                        (middle + 1), (len(self.points) - 1), iteratorRow
-                    )
-
+    def searchIteratorPoint(self, iteratorRow: float) -> Optional[IteratorPoint]:
+        for i, item in enumerate(self.points):
+            if self.iteratorRowComparator(iteratorRow, item.point) == 0:
+                return self.points.pop(i)
         return None
