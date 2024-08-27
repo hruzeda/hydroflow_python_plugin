@@ -1,3 +1,5 @@
+import functools
+
 from ..utils.message import Message
 from .segment import Segment
 
@@ -46,57 +48,53 @@ class Relation:
         destination: Segment,
         relation_type: int,
     ) -> None:
-        if start <= end:
-            item = RelationItem(source, destination, relation_type)
+        item = RelationItem(source, destination, relation_type)
 
-            # Calculando o meio (indice).
-            middle = (start + end) // 2
+        if not self.items:
+            self.items.append(item)
+            return
 
-            # Lendo o item do meio.
-            middle_item = (
-                self.items[middle] if relation_type == 0 else self.err[middle]
-            )
+        i = round((start + end) / 2)
+        while start <= i < end:
+            middleItem = self.items[i] if relation_type == 0 else self.err[i]
 
             # Comparando os itens.
-            comparison = self.compare_position(item, middle_item)
+            comp = self.comparePosition(item, middleItem)
 
             # (item < itemMeio)
-            if comparison == -1:
-                if start in (middle, end):  # (inicio == fim) Não encontrou.
+            if comp == -1:
+                if i in (start, end):  # (inicio == fim) Não encontrou.
                     # Inserir no ponteiro atual(meio).
                     if relation_type == 0:
-                        self.items.insert(middle, item)
-                    else:
-                        self.err.insert(middle, item)
-                elif start < middle:  # (meio > 0)
-                    self.insert(
-                        start, middle - 1, source, destination, relation_type
-                    )
+                        self.items.insert(i, item)
+                        return
+                    self.err.insert(i, item)
+                    return
+                if i > start:  # (meio > 0)
+                    i -= 1
                 else:  # É inicio da lista (meio = 0).
                     if relation_type == 0:
                         self.items.insert(0, item)
-                    else:
-                        self.err.insert(0, item)
-            # (item > itemMeio)
-            elif comparison == 1:
+                        return
+                    self.err.insert(0, item)
+                    return
+            elif comp == 1:
                 if relation_type == 0:
-                    if middle == len(self.items) - 1:  # Se meio é ultimo elemento.
+                    if i == len(self.items) - 1:  # Se meio é ultimo elemento.
                         self.items.append(item)
-                    elif start == end:
-                        self.items.insert(middle, item)
-                    else:
-                        self.insert(
-                            middle + 1, end, source, destination, relation_type
-                        )
+                        return
+                    if i == end:
+                        self.items.insert(i, item)
+                        return
+                    i += 1
                 else:  # Cadastrar relações indesejadas.
-                    if middle == len(self.err) - 1:  # Se meio é ultimo elemento.
+                    if i == len(self.err) - 1:  # Se meio é ultimo elemento.
                         self.err.append(item)
-                    elif start == end:
-                        self.err.insert(middle, item)
-                    else:
-                        self.insert(
-                            middle + 1, end, source, destination, relation_type
-                        )
+                        return
+                    if i == end:
+                        self.err.insert(i, item)
+                        return
+                    i += 1
 
     def addMouth(self, drainage: Segment, boundary: Segment) -> None:
         # Garantindo que o primeiro argumento é da bacia.
@@ -166,9 +164,7 @@ class Relation:
         result = []
 
         # Obtendo o índice primário.
-        primaryIndex = self.findPrimaryIndex(
-            0, len(self.primaryIndex) - 1, featureId
-        )
+        primaryIndex = self.findPrimaryIndex(featureId)
         if primaryIndex >= 0:
             reached_end = False
             isChild = False
@@ -211,7 +207,7 @@ class Relation:
 
         return result
 
-    def compare_position(self, a: RelationItem, b: RelationItem) -> int:
+    def comparePosition(self, a: RelationItem, b: RelationItem) -> int:
         if (
             a.source.featureId == b.source.featureId
             and a.destination.featureId == b.destination.featureId
@@ -233,17 +229,25 @@ class Relation:
             return -1
         return 1
 
-    def findPrimaryIndex(self, start: int, end: int, featureId: int) -> int:
-        if start <= end and self.primaryIndex:
-            middle = (start + end) // 2
-            item = self.primaryIndex[middle]
+    def findPrimaryIndex(self, featureId: int) -> int:
+        i = round(len(self.primaryIndex) / 2)
+        while 0 <= i < len(self.primaryIndex):
+            item = self.primaryIndex[i]
 
             if featureId == item.featureId:
                 return item.value
             if featureId < item.featureId:
-                return self.findPrimaryIndex(start, middle - 1, featureId)
-            return self.findPrimaryIndex(middle + 1, end, featureId)
+                i -= 1
+            else:
+                i += 1
         return -1
+
+    def compareIndexItems(self, a: IndexItem, b: IndexItem) -> int:
+        return (
+            b.value - a.value
+            if a.featureId == b.featureId
+            else b.featureId - a.featureId
+        )
 
     def buildIndexes(self) -> None:
         # Montando índice principal.
@@ -256,7 +260,7 @@ class Relation:
             self.index.append(IndexItem(eventItem.destination.featureId, i))
 
         # Ordenando o índice principal.
-        self.index.sort(key=lambda x: x.featureId + x.value)
+        self.index.sort(key=functools.cmp_to_key(self.compareIndexItems))
 
         # Montando o índice primário.
         self.primaryIndex.clear()

@@ -2,10 +2,10 @@ from typing import Optional
 
 from qgis.gui import Qgis
 
-from ..models.observation import Observation
 from .attribute import Attribute
 from .feature import Feature
 from .new_feature_attribute import NewFeatureAttribute
+from .observation import Observation
 
 
 class FeatureSet:
@@ -60,31 +60,28 @@ class FeatureSet:
             self.obs.cleanup()
 
     def getNewFeatureAttributes(self, featureId: int) -> Optional[Attribute]:
-        index = self.findAttributeIndex(0, len(self.newFeaturesList) - 1, featureId)
+        index = self.findAttributeIndex(featureId)
         if index != -1:
             reg = self.newFeaturesAttributes[index]
             return reg.attribute
         return None
 
-    def findAttributeIndex(self, start: int, end: int, featureId: int) -> int:
-        result = -1
-        if start <= end:
+    def findAttributeIndex(self, featureId: int) -> int:
+        i = round(len(self.newFeaturesAttributes) / 2)
+        while 0 <= i < len(self.newFeaturesAttributes):
             # Calculando o meio (indice).
-            center = round((start + end) / 2)
 
             # Lendo o registro do meio.
-            reg = self.newFeaturesAttributes[center]
+            reg = self.newFeaturesAttributes[i]
 
             # Analisando.
             if featureId == reg.featureId:
-                result = center
-            elif featureId < reg.featureId:
-                if center > start:
-                    result = self.findAttributeIndex(start, center - 1, featureId)
-            else:  # (idElemento > reg.getIdElemento)
-                if center < end:
-                    result = self.findAttributeIndex(center + 1, end, featureId)
-        return result
+                return i
+            if featureId < reg.featureId:
+                i -= 1
+            else:
+                i += 1
+        return -1
 
     def getTotalFeatures(self) -> int:
         return len(self.featuresList) + len(self.newFeaturesList)

@@ -150,6 +150,10 @@ class SHPFeatureSetDAO:
                             )
                         ],
                     )
+                    if shapeType == 0:
+                        feature_object.process = False
+                        feature_object.hasObservation = True
+                        obs.set_value(feature.id(), msg_3)
                 else:
                     # Handle normal geometries
                     feature_object = Feature(
@@ -158,13 +162,14 @@ class SHPFeatureSetDAO:
                         featureType=geometry.wkbType(),
                         vertex_list=vertex_list,
                     )
-                feature_object.process = False
-                feature_object.hasObservation = True
-                obs.set_value(feature.id(), msg_3)
+                    feature_object.process = False
+                    feature_object.hasObservation = True
+                    obs.set_value(feature.id(), msg_3)
                 features.append(feature_object)
 
         # Set the attributes for the figura (ConjuntoFeicao object)
         feature_set.featuresList = features
+        feature_set.obs = obs
 
         return feature_set
 

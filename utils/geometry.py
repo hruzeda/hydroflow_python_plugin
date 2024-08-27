@@ -57,8 +57,8 @@ class Geometry:
             ) / denon
 
             # Verificando se há interseção.
-            if (s > -self.tolerance and s < (1 + self.tolerance)) and (
-                t > -self.tolerance and t < (1 + self.tolerance)
+            if (s > -self.tolerance and s < (1 + self.tolerance)) and (  # pylint: disable=chained-comparison
+                t > -self.tolerance and t < (1 + self.tolerance)  # pylint: disable=chained-comparison
             ):
                 x = primeiro.a.x + (s * (primeiro.b.x - primeiro.a.x))
                 y = primeiro.a.y + (s * (primeiro.b.y - primeiro.a.y))

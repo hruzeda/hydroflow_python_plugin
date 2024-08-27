@@ -70,27 +70,23 @@ class Classificator:
         return result
 
     def buildIterator(self) -> None:
-        self.iterator.addRows(self.drainage.featuresList)
+        self.iterator.addRows(self.drainage.featuresList, True)
         self.iterator.addRows(self.drainage.newFeaturesList, True)
-        self.iterator.addRows(self.boundary.featuresList)
+        self.iterator.addRows(self.boundary.featuresList, True)
         self.iterator.sortRows()
 
     def iteratePlane(self) -> None:
-        # Iniciando a varredura.
         lv = self.iterator.next()
         if not lv:
             return
         previousIteration = lv.point.x
 
         while lv is not None:
-            iteratorLine = lv.point.x
             record = lv.segmentA
 
-            # Verificando se mudou a linha de varredura.
-            if self.geo.smallerThan(previousIteration, iteratorLine):
-                # Processando a linha de varredura anterior.
+            if not self.geo.equalsTo(aX=lv.point.x, bX=previousIteration):
                 self.processIteratorPoints(previousIteration)
-                previousIteration = iteratorLine
+                previousIteration = lv.point.x
 
             # Inserir segmento(s) no ponto de varredura.
             self.iterator.addIteratorPoint(lv)
@@ -190,7 +186,7 @@ class Classificator:
                     )
                 ):
                     # Inserindo a interseção na lista de varredura.
-                    self.iterator.addIteratorPoint(
+                    self.iterator.rows.append(
                         IteratorRow(intersectionPoint, 2, above, below)
                     )
 
@@ -217,8 +213,10 @@ class Classificator:
                     )
 
                 # Avaliando as relações topológicas.
-                for i in range(len(iteratorPoint.segments) - 1):
-                    for j in range(i + 1, len(iteratorPoint.segments)):
+                i = 0
+                while i < len(iteratorPoint.segments) - 1:
+                    j = i + 1
+                    while j < len(iteratorPoint.segments):
                         if test[i] and test[j]:  # Encosta.
                             self.topologicalRelations.addRelation(
                                 iteratorPoint.segments[i],
@@ -237,6 +235,10 @@ class Classificator:
                                 iteratorPoint.segments[j],
                                 2,
                             )
+                        j += 1
+                    i += 1
+
+                test.clear()
 
             iteratorPoint = self.iterator.searchIteratorPoint(iteratorLine)
 
@@ -257,11 +259,11 @@ class Classificator:
             self.topologicalRelations.buildIndexes()
 
             # Construindo a árvore que representa cada bacia.
-            for entrypointRelation in self.topologicalRelations.mouths:
+            for mouthRelation in self.topologicalRelations.mouths:
                 # origem: segmento da foz; destino: segmento do limite.
                 result = self.createNodes(
-                    entrypointRelation.source,
-                    entrypointRelation.destination,
+                    mouthRelation.source,
+                    mouthRelation.destination,
                     [],
                     result,
                 )[0]

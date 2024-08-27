@@ -1,4 +1,5 @@
 from typing import Optional
+
 from ..utils.geometry import Geometry
 from ..utils.message import Message
 from .segment import Segment
@@ -18,8 +19,17 @@ class Position:
             self.list.pop(indice)
 
     def locate(self, segment: Segment) -> int:
-        for i, item in enumerate(self.list):
-            if segment.compareTo(item) == 0:
+        i = round(len(self.list) / 2)
+        while 0 <= i < len(self.list):
+            item = self.list[i]
+
+            comp = segment.compareTo(item)
+
+            if comp < 0:
+                i -= 1
+            elif comp > 0:
+                i += 1
+            else:
                 return i
         return -1
 
@@ -102,13 +112,23 @@ class Position:
             self.list.append(segment)
             return 0
 
-        for i, item in enumerate(self.list):
-            comparison = self.comparePosition(segment.a.x, segment, item)
+        i = round(len(self.list) / 2)
+        while 0 <= i < len(self.list):
+            item = self.list[i]
 
-            if comparison == 0:
-                return i
-            if comparison < 0:
-                self.list.insert(i, segment)
+            comp = self.comparePosition(segment.a.x, segment, item)
+
+            if comp < 0:
+                if i == len(self.list) - 1:
+                    self.list.append(segment)
+                    return len(self.list) - 1
+                i += 1
+            elif comp > 0:
+                if i == 0:
+                    self.list.insert(0, segment)
+                    return 0
+                i -= 1
+            else:
                 return i
 
         self.list.append(segment)

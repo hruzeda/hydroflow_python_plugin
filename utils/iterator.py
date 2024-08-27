@@ -1,3 +1,4 @@
+import functools
 from typing import Optional
 
 from ..models.feature import Feature
@@ -26,20 +27,28 @@ class IteratorPoint:
         self.segments = [segment]
 
     def insertSegment(self, segment: Segment, start: int = 0, end: int = 0) -> None:
-        i = start
-        while i < min(end, len(self.segments)):
+        if not self.segments:
+            self.segments.append(segment)
+            return
+
+        i = round((start + end) / 2)
+        while start <= i < end:
             item = self.segments[i]
+
             comp = segment.compareTo(item)
 
-            if comp == 0:
-                return
             if comp < 0:
-                self.segments.insert(i, segment)
+                if i in (0, start, end):
+                    self.segments.insert(i, segment)
+                    return
+                i -= 1
+            elif comp > 0:
+                if i in (0, start, end):
+                    self.segments.insert(i + 1, segment)
+                    return
+                i += 1
+            else:
                 return
-
-            i += 1
-
-        self.segments.append(segment)
 
 
 class Iterator:
@@ -78,24 +87,35 @@ class Iterator:
                     )
                 )
 
-    def iteratorRowSorter(self, a: IteratorRow) -> tuple[int, int]:
+    def iteratorRowSorter(self, a: IteratorRow, b: IteratorRow) -> int:
         # Avaliando o indice do item de varredura.
-        result = a.point.x
-        if a.eventType == 0:
-            result += a.point.y
-        if a.eventType == 1:
-            result += a.segmentA.getSmallerX(self.geo.tolerance)
-        return a.eventType, result
-
-    def iteratorRowComparator(self, iteratorRow: float, point: Vertex) -> int:
-        if point.withinIteratorRow(iteratorRow, self.geo.tolerance):
-            if self.geo.smallerThan(iteratorRow, point.x):
-                return -1
+        if self.geo.smallerThan(b.point.x, a.point.x):  # Índice menor primeiro
             return 1
-        return 0
+        if self.geo.equalsTo(aX=a.point.x, bX=b.point.x):
+            # Avaliando o tipo dos eventos
+            if a.eventType == 0 and b.eventType == 0:  # São do mesmo tipo: entrada!
+                # Avaliando altura na linha de varredura (y).
+                return 1 if self.geo.smallerThan(b.point.y, a.point.y) else -1
+            if a.eventType == 1 and b.eventType == 1:  # São do mesmo tipo: saída!
+                xA = a.segmentA.getSmallerX(self.geo.tolerance)
+                xB = b.segmentA.getSmallerX(self.geo.tolerance)
+                return (
+                    1 if self.geo.smallerThan(xB, xA) else -1
+                )  # Entra depois, sai depois!
+
+        # São de tipos diferentes!
+        return 1 if a.eventType == b.eventType else -1
+
+    def iteratorRowXComparator(self, iteratorLine: float, point: Vertex) -> int:
+        if point.withinIteratorRow(iteratorLine, self.geo.tolerance):
+            return 0
+
+        if self.geo.smallerThan(iteratorLine, point.x):
+            return -1
+        return 1
 
     def sortRows(self) -> None:
-        self.rows.sort(key=self.iteratorRowSorter)
+        self.rows.sort(key=functools.cmp_to_key(self.iteratorRowSorter))
 
     def createIteratorPoint(
         self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None
@@ -127,8 +147,12 @@ class Iterator:
             iteratorRow.point, iteratorRow.segmentA, iteratorRow.segmentB
         )
 
-        i = start
-        while i < min(end, len(self.points)):
+        if not self.points:
+            self.points.append(iteratorPoint)
+            return
+
+        i = round((start + end) / 2)
+        while start <= i < end:
             item = self.points[i]
             comp = self.iteratorPointComparator(iteratorRow.point, item.point)
 
@@ -138,15 +162,30 @@ class Iterator:
                     item.insertSegment(iteratorRow.segmentB)
                 return
             if comp < 0:
-                self.points.insert(i, iteratorPoint)
-                return
+                if i in (0, start, end):
+                    self.points.insert(i, iteratorPoint)
+                    return
+                i -= 1
+            else:
+                if i == len(self.points) - 1:
+                    self.points.append(iteratorPoint)
+                    return
+                if i in (0, start, end):
+                    self.points.insert(i + 1, iteratorPoint)
+                    return
+                i += 1
 
-            i += 1
+    def searchIteratorPoint(self, iteratorLine: float) -> Optional[IteratorPoint]:
+        i = round(len(self.points) / 2)
+        while 0 <= i < len(self.points):
+            item = self.points[i]
 
-        self.points.append(iteratorPoint)
+            comp = self.iteratorRowXComparator(iteratorLine, item.point)
 
-    def searchIteratorPoint(self, iteratorRow: float) -> Optional[IteratorPoint]:
-        for i, item in enumerate(self.points):
-            if self.iteratorRowComparator(iteratorRow, item.point) == 0:
+            if comp == 0:
                 return self.points.pop(i)
+            if comp < 0 < i:
+                i -= 1
+            elif comp > 0 and i < len(self.points) - 1:
+                i += 1
         return None
