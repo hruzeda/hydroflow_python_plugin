@@ -5,12 +5,12 @@ class Params:
     def __init__(
         self,
         origin: QtWidgets.QDialog,
-        drainageFileName="",
-        boundaryFileName="",
-        toleranceXY=0,
-        strahlerOrderType=0,
-        shreveOrderEnabled=False,
-    ):
+        drainageFileName: str = "",
+        boundaryFileName: str = "",
+        toleranceXY: float = 0,
+        strahlerOrderType: int = 0,
+        shreveOrderEnabled: bool = False,
+    ) -> None:
         self.origin = origin
         self.drainageFileName = drainageFileName
         self.boundaryFileName = boundaryFileName

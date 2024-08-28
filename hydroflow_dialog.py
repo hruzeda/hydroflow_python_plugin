@@ -23,18 +23,19 @@
 """
 
 import traceback
+from typing import Any
 
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSlot
 from qgis.core import Qgis, QgsMessageLog
-from qgis.PyQt import QtWidgets
 
 from .controller import Controller
 from .hydroflow_dialog_base_ui import Ui_HydroflowDialogBase
 from .params import Params
 
 
-class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
-    def __init__(self, parent=None) -> None:
+class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):  # type: ignore
+    def __init__(self, parent: Any = None) -> None:
         """Constructor."""
         super(HydroflowDialog, self).__init__(parent)  # type: ignore # pylint: disable=super-with-arguments,too-many-function-args
         # Set up the user interface from Designer through FORM_CLASS.
@@ -44,24 +45,24 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-    def get_path(self, titulo: str) -> str:
+    def get_path(self, titulo: str) -> Any:
         return QtWidgets.QFileDialog.getOpenFileName(
             self, titulo, "", "Shape File (*.shp)"
         )[0]
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_pushButton_HidLn_clicked(self) -> None:
         path = self.get_path("Arquivo da rede de drenagem")
         if path:
             self.lineEdit_HidLn.setText(str(path))
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_pushButton_Lim_clicked(self) -> None:
         path = self.get_path("Arquivo da rede de drenagem")
         if path:
             self.lineEdit_Lim.setText(path)
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_comboBox_currentIndexChanged(self, index: int) -> None:
         if index == 0:
             self.lineEdit_TolXY.setText("0.001")
@@ -72,7 +73,7 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
         elif index == 3:
             self.lineEdit_TolXY.setText("0.001")
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_checkBox_FlowOnly_stateChanged(self, CBState: str) -> None:
         if CBState == "checked":
             self.checkBox_Strahler.setChecked(False)
@@ -92,15 +93,15 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
         ):
             self.checkBox_FlowOnly.setChecked(True)
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_checkBox_Strahler_clicked(self) -> None:
         self.evaluateInference()
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_checkBox_Shreve_clicked(self) -> None:
         self.evaluateInference()
 
-    @pyqtSlot()
+    @pyqtSlot()  # type: ignore
     def on_pushButton_Exec_clicked(self) -> None:
         try:
             drainageFileName = self.lineEdit_HidLn.text()
@@ -157,7 +158,7 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
             )
             self.displayMessage(5)
 
-    def displayMessage(self, error_code):
+    def displayMessage(self, error_code: int) -> None:
         """
         Códigos:
         0 - SEM MENSAGEM.

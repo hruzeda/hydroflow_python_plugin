@@ -12,7 +12,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_HydroflowDialogBase(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.pushButton_Exec: QtWidgets.QPushButton
         self.groupBox_Lim: QtWidgets.QGroupBox
         self.lineEdit_Lim: QtWidgets.QLineEdit
@@ -30,7 +30,7 @@ class Ui_HydroflowDialogBase(object):
         self.lineEdit_HidLn: QtWidgets.QLineEdit
         self.pushButton_HidLn: QtWidgets.QPushButton
 
-    def setupUi(self, HydroflowDialogBase):
+    def setupUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
         HydroflowDialogBase.setObjectName("HydroflowDialogBase")
         HydroflowDialogBase.resize(464, 276)
         self.pushButton_Exec = QtWidgets.QPushButton(HydroflowDialogBase)

@@ -6,13 +6,13 @@ from ..models.vertex import Vertex
 
 
 class Geometry:
-    def __init__(self, tolerance=0) -> None:
+    def __init__(self, tolerance: float = 0) -> None:
         self.tolerance = tolerance
 
-    def smallerThan(self, a, b) -> bool:
+    def smallerThan(self, a: float, b: float) -> bool:
         return a + self.tolerance < b
 
-    def greaterThan(self, a, b) -> bool:
+    def greaterThan(self, a: float, b: float) -> bool:
         return a - self.tolerance > b
 
     def equalsTo(
@@ -62,7 +62,7 @@ class Geometry:
             ):
                 x = primeiro.a.x + (s * (primeiro.b.x - primeiro.a.x))
                 y = primeiro.a.y + (s * (primeiro.b.y - primeiro.a.y))
-                return Vertex(x, y)
+                return Vertex(x=x, y=y)
         return None
 
     def calculateRelativePoint(self, x: float, segment: Segment) -> Vertex:
@@ -72,12 +72,12 @@ class Geometry:
 
         # o segmento é vertical. Retorna o vértice com o menor "y"!
         if segment.isVertical(self.tolerance) or abs(x - a.x) <= self.tolerance:
-            p = Vertex(a.x, a.y)
+            p = Vertex(x=a.x, y=a.y)
         else:  # o segmento não é vertical.
             if (
                 abs(x - b.x) <= self.tolerance
             ):  # A linha de varredura "x" intercepta o vértice "b".
-                p = Vertex(b.x, b.y)
+                p = Vertex(x=b.x, y=b.y)
             else:
                 # Calculando o ponto relativo.
                 # Para a.x < b.x
@@ -88,7 +88,7 @@ class Geometry:
                 # ou
                 # y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
                 y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y
-                p = Vertex(x, y)
+                p = Vertex(x=x, y=y)
         return p
 
     def compare(self, a: float, b: float) -> int:
@@ -122,4 +122,4 @@ class Geometry:
         """
         Subtrai das coordenadas de "a" as coordenadas de "b".
         """
-        return Vertex(a.x - b.x, a.y - b.y)
+        return Vertex(x=a.x - b.x, y=a.y - b.y)

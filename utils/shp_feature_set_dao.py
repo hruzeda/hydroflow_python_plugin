@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from PyQt5.QtCore import QVariant
 from qgis.core import (
@@ -27,7 +27,7 @@ from ..params import Params
 
 
 class SHPFeatureSetDAO:
-    def __init__(self, tolerancia=0):
+    def __init__(self, tolerancia: float = 0) -> None:
         self.tolerancia = tolerancia
 
     # Tipos: 0 - bacia; 1 - limite.
@@ -121,7 +121,7 @@ class SHPFeatureSetDAO:
                     if partId == 0:  # Feição original.
                         featureObject = Feature(
                             featureId=featureId,
-                            setId=shapeType,
+                            setId=shapeType or -1,
                             featureType=geometry.wkbType(),
                             vertexList=vertexList,
                             segmentsList=segmentsList,
@@ -133,7 +133,7 @@ class SHPFeatureSetDAO:
                     else:  # Adicionar novo registro no ShapeFile.
                         featureObject = Feature(
                             featureId=newFeatureId,
-                            setId=shapeType,
+                            setId=shapeType or -1,
                             featureType=geometry.wkbType(),
                             vertexList=vertexList,
                             segmentsList=segmentsList,
@@ -158,7 +158,7 @@ class SHPFeatureSetDAO:
                 if len(vertexList) == 1:
                     featureObject = Feature(
                         featureId=feature.id(),
-                        setId=shapeType,
+                        setId=shapeType or -1,
                         featureType=geometry.wkbType(),
                         vertexList=vertexList,
                         segmentsList=[
@@ -178,7 +178,7 @@ class SHPFeatureSetDAO:
                 else:  # Não tem vertices! Situação de erro do ShapeFile.
                     featureObject = Feature(
                         featureId=feature.id(),
-                        setId=shapeType,
+                        setId=shapeType or -1,
                         featureType=geometry.wkbType(),
                         vertexList=vertexList,
                     )
@@ -224,7 +224,7 @@ class SHPFeatureSetDAO:
 
         return attributes
 
-    def createFeatureSet(self, fileName: str, geometryType: QgsWkbTypes):
+    def createFeatureSet(self, fileName: str, geometryType: QgsWkbTypes) -> bool:
         # Define the geometry type
         geometry_type_map = {
             QgsWkbTypes.PointGeometry: "Point",
@@ -234,7 +234,7 @@ class SHPFeatureSetDAO:
 
         geometryType = geometry_type_map.get(geometryType, None)
         if not geometryType:
-            return None
+            return False
 
         # Create an empty SHP file with the specified geometry type
         writer = QgsVectorFileWriter(
@@ -243,12 +243,18 @@ class SHPFeatureSetDAO:
 
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print(f"Error when creating SHP file: {writer.hasError()}")
-            return None
+            return False
 
         del writer  # Close the file and release resources
         return True
 
-    def createNewTable(self, fileName, originalDbfTable, params, has_observation):
+    def createNewTable(
+        self,
+        fileName: str,
+        originalDbfTable: Any,
+        params: Params,
+        has_observation: bool,
+    ) -> bool:
         # Create a new SHP file (which includes a DBF table)
         fields = QgsFields()
 
@@ -256,10 +262,10 @@ class SHPFeatureSetDAO:
         for field in originalDbfTable.fields():
             fields.append(field)
 
-        if params.tipoOrdemStrahler > 0:
+        if params.strahlerOrderType > 0:
             fields.append(QgsField("Strahler", QVariant.Int))
 
-        if params.eOrdemShreve:
+        if params.shreveOrderEnabled:
             fields.append(QgsField("Shreve", QVariant.Int))
 
         # Adding custom fields based on conditions
@@ -310,7 +316,7 @@ class SHPFeatureSetDAO:
         strahler: int,
         shreve: bool,
         attributes: Optional[list[Attribute]],
-    ):
+    ) -> None:
         # Create a new feature
         feature = QgsFeature(origLayer.fields())
 
@@ -372,7 +378,7 @@ class SHPFeatureSetDAO:
 
         QgsProject.instance().addMapLayer(shp_layer)
 
-    def copyConfigFiles(self, fileName: str, newFileName: str):
+    def copyConfigFiles(self, fileName: str, newFileName: str) -> None:
         original_path = Path(fileName).parent
         new_path = Path(newFileName).parent
 

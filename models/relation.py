@@ -89,7 +89,9 @@ class Relation:
             # Inserindo em fozes.
             self.mouths.append(item)
 
-    def addRelation(self, source: Segment, destination: Segment, relationType: int):
+    def addRelation(
+        self, source: Segment, destination: Segment, relationType: int
+    ) -> None:
         """
         Tipos de relação topológica:
         0 - Encosta

@@ -22,7 +22,7 @@ class Segment:
     def getSmallerX(self, tolerance: float) -> float:
         return self.a.x if self.a.x + tolerance < self.b.x else self.b.x
 
-    def isPoint(self, tolerance: float):
+    def isPoint(self, tolerance: float) -> bool:
         return (
             abs(self.a.x - self.b.x) <= tolerance
             and abs(self.a.y - self.b.y) <= tolerance
@@ -31,7 +31,7 @@ class Segment:
     def isHorizontal(self, tolerance: float) -> bool:
         return not self.isPoint(tolerance) and abs(self.a.y - self.b.y) <= tolerance
 
-    def isVertical(self, tolerance: float):
+    def isVertical(self, tolerance: float) -> bool:
         return not self.isPoint(tolerance) and abs(self.a.x - self.b.x) <= tolerance
 
     def compareTo(self, segment: "Segment") -> int:

@@ -23,8 +23,12 @@
  This script initializes the plugin, making it known to QGIS.
 """
 
+from typing import Any
 
-def classFactory(iface):
+from .hydroflow import Hydroflow
+
+
+def classFactory(iface: Any) -> "Hydroflow":
     """Load Hydroflow class from file Hydroflow.
 
     :param iface: A QGIS interface instance.

@@ -1,3 +1,4 @@
+from typing import Optional
 from .segment import Segment
 from .vertex import Vertex
 
@@ -5,17 +6,17 @@ from .vertex import Vertex
 class Feature:
     def __init__(
         self,
-        featureId=-1,
-        setId=-1,
-        mouthFeatureId=-1,
-        featureType=0,
-        flow=0,
-        strahler=0,
-        shreve=0,
-        vertexList=None,
-        segmentsList=None,
-        process=True,
-        hasObservation=False,
+        featureId: int = -1,
+        setId: int = -1,
+        mouthFeatureId: int = -1,
+        featureType: int = 0,
+        flow: int = 0,
+        strahler: int = 0,
+        shreve: int = 0,
+        vertexList: Optional[list[Vertex]] = None,
+        segmentsList: Optional[list[Segment]] = None,
+        process: bool = True,
+        hasObservation: bool = False,
     ) -> None:
         self.featureId = featureId
         self.setId = setId
@@ -24,8 +25,8 @@ class Feature:
         self.flow = flow
         self.strahler = strahler
         self.shreve = shreve
-        self.vertexList: list[Vertex] = vertexList or []
-        self.segmentsList: list[Segment] = segmentsList or []
+        self.vertexList = vertexList or []
+        self.segmentsList = segmentsList or []
         self.process = process
         self.hasObservation = hasObservation
 

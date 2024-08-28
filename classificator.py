@@ -441,9 +441,6 @@ class Classificator:
                     "Erro! impossível continuar! Estrutura topológica não "
                     "esperada para hierarquização."
                 )
-                msg_2 = ""
-                msg_3 = ""
-                msg_4 = ""
                 msg_5 = "Confira a topologia e execute o processamento novamente."
                 if loopBasin:
                     result = 5

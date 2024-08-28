@@ -4,7 +4,7 @@ from ..params import Params
 
 
 class Message:
-    def __init__(self, params: Params):
+    def __init__(self, params: Params) -> None:
         self.params = params
         self.time = QDateTime.currentDateTime()
         self.result = ""
@@ -13,10 +13,10 @@ class Message:
     # def cleanup(self):
     #     self.list = []
 
-    def append(self, message):
+    def append(self, message: str) -> None:
         self.list.append(message)
 
-    def getHeader(self):
+    def getHeader(self) -> str:
         temp_1 = ""
         comp = ""
         temp_2 = ""
@@ -52,30 +52,17 @@ class Message:
             temp_res = "\nResultado: " + self.result
 
         return (
-            "HydroFlow 1.3\n=============\n"
-            + "Processamento: "
-            + self.getDateTime()
-            + "\n"
-            + "Tolerância: "
-            + str(self.params.toleranceXY)
-            + "\n"
-            + "Rede de drenagem: "
-            + self.params.drainageFileName
-            + "\n"
-            + "Limite da área: "
-            + self.params.boundaryFileName
-            + temp_res
-            + "\n"
-            + "Inferir: "
-            + "\n"
-            + temp_1
-            + (
-                "\n---------------------------------------------------------------"
-                "----------------------------------------------------"
-            )
+            "HydroFlow 1.3\n=============\nProcessamento: "
+            f"{self.time.toString('dd/MM/yyyy hh:mm:ss')}\n"
+            f"Tolerância: {str(self.params.toleranceXY)}\n"
+            f"Rede de drenagem: {self.params.drainageFileName}\n"
+            f"Limite da área: {self.params.boundaryFileName + temp_res}\n"
+            f"Inferir: \n{temp_1}\n"
+            "---------------------------------------------------------------"
+            "----------------------------------------------------"
         )
 
-    def getFooter(self):
+    def getFooter(self) -> str:
         return (
             "---------------------------------------------------------------"
             "----------------------------------------------------"
@@ -88,6 +75,3 @@ class Message:
         if index < len(self.list):
             return self.list[index]
         return ""
-
-    def getDateTime(self):
-        return self.time.toString("dd/MM/yyyy hh:mm:ss")

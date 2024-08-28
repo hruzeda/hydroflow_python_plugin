@@ -1,7 +1,6 @@
 import functools
 from typing import Optional
 
-from qgis.core import Qgis, QgsMessageLog
 
 from ..models.feature import Feature
 from ..models.segment import Segment
@@ -109,7 +108,7 @@ class Scanner:
     def createScanPoint(
         self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None
     ) -> ScanVertex:
-        pontoV = Vertex(ponto.x, ponto.y)
+        pontoV = Vertex(x=ponto.x, y=ponto.y)
         scanPoint = ScanVertex(pontoV, segmentoA)
         if segmentoB:
             scanPoint.insertSegment(segmentoB)

@@ -23,7 +23,7 @@
 """
 
 import os.path
-from typing import Optional
+from typing import Any, Optional
 
 from qgis.PyQt.QtCore import QCoreApplication, QSettings, QTranslator
 from qgis.PyQt.QtGui import QIcon
@@ -38,7 +38,7 @@ from .resources_rc import *  # noqa: F401, F403  NOSONAR
 class Hydroflow:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface) -> None:
+    def __init__(self, iface: Any) -> None:
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -68,8 +68,7 @@ class Hydroflow:
         # Must be set in initGui() to survive plugin reloads
         self.first_start: Optional[bool] = None
 
-    # noinspection PyMethodMayBeStatic
-    def tr(self, message) -> str:
+    def tr(self, message: str) -> Any:
         """Get the translation for a string using Qt translation API.
 
         We implement this ourselves since we do not inherit QObject.
@@ -85,15 +84,15 @@ class Hydroflow:
 
     def add_action(
         self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None,
+        icon_path: str,
+        text: str,
+        callback: Any,
+        enabled_flag: bool = True,
+        add_to_menu: bool = True,
+        add_to_toolbar: bool = True,
+        status_tip: Optional[str] = None,
+        whats_this: Optional[str] = None,
+        parent: Optional[Any] = None,
     ) -> QAction:
         """Add a toolbar icon to the toolbar.
 
