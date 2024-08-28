@@ -24,7 +24,7 @@
 
 import traceback
 
-from qgis.core import QgsMessageLog
+from qgis.core import Qgis, QgsMessageLog
 from qgis.PyQt import QtWidgets
 
 from .controller import Controller
@@ -144,7 +144,9 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
             resultado = con.classifyWaterBasin(params)
             self.displayMessage(resultado)  # Valores para resultado: 0, 2, 3 ou 9.
         except Exception:  # pylint: disable=broad-exception-caught
-            QgsMessageLog.logMessage(traceback.format_exc(), "Hydroflow")
+            QgsMessageLog.logMessage(
+                traceback.format_exc(), "Hydroflow", Qgis.MessageLevel.Critical
+            )
             self.displayMessage(5)
 
     def displayMessage(self, error_code):

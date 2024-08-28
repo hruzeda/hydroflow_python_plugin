@@ -19,12 +19,11 @@ class Observation:
 
     def set_value(self, featureId: int, text: str) -> None:
         found = False
-        if len(self.list) > 0:
-            for item in self.list:
-                if item.featureId == featureId:
-                    item.text = text
-                    found = True
-                    break
+        for item in self.list:
+            if item.featureId == featureId:
+                item.text = text
+                found = True
+                break
 
         if not found:
             item = ObservationItem()

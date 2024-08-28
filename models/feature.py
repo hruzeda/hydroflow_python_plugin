@@ -9,12 +9,11 @@ class Feature:
         setId=-1,
         mouthFeatureId=-1,
         featureType=0,
-        partCount=0,
         flow=0,
         strahler=0,
         shreve=0,
-        vertex_list=None,
-        segments_list=None,
+        vertexList=None,
+        segmentsList=None,
         process=True,
         hasObservation=False,
     ) -> None:
@@ -22,12 +21,11 @@ class Feature:
         self.setId = setId
         self.mouthFeatureId = mouthFeatureId
         self.featureType = featureType
-        self.partCount = partCount
         self.flow = flow
         self.strahler = strahler
         self.shreve = shreve
-        self.vertex_list: list[Vertex] = vertex_list or []
-        self.segments_list: list[Segment] = segments_list or []
+        self.vertexList: list[Vertex] = vertexList or []
+        self.segmentsList: list[Segment] = segmentsList or []
         self.process = process
         self.hasObservation = hasObservation
 
@@ -37,5 +35,15 @@ class Feature:
         self.shreve = shreve
 
     def cleanup(self) -> None:
-        self.vertex_list = []
-        self.segments_list = []
+        self.vertexList = []
+        self.segmentsList = []
+
+    def __str__(self) -> str:
+        return (
+            f"Feature {self.featureId} ({self.featureType}), "
+            f"Flow: {self.flow}, "
+            f"Strahler: {self.strahler}, "
+            f"Shreve: {self.shreve}, "
+            f"Vertices: {len(self.vertexList)}, "
+            f"Segments: {len(self.segmentsList)}"
+        )

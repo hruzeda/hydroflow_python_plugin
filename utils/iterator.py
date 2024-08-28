@@ -1,6 +1,8 @@
 import functools
 from typing import Optional
 
+from qgis.core import Qgis, QgsMessageLog
+
 from ..models.feature import Feature
 from ..models.segment import Segment
 from ..models.vertex import Vertex
@@ -27,28 +29,19 @@ class IteratorPoint:
         self.segments = [segment]
 
     def insertSegment(self, segment: Segment, start: int = 0, end: int = 0) -> None:
-        if not self.segments:
-            self.segments.append(segment)
-            return
+        if self.segments:
+            for i in range(max(0, start), min(len(self.segments) - 1, end)):
+                item = self.segments[i]
+                comp = segment.compareTo(item)
 
-        i = round((start + end) / 2)
-        while start <= i < end:
-            item = self.segments[i]
+                if comp == 0:
+                    return
 
-            comp = segment.compareTo(item)
-
-            if comp < 0:
-                if i in (0, start, end):
+                if comp < 0:
                     self.segments.insert(i, segment)
                     return
-                i -= 1
-            elif comp > 0:
-                if i in (0, start, end):
-                    self.segments.insert(i + 1, segment)
-                    return
-                i += 1
-            else:
-                return
+
+        self.segments.insert(min(len(self.segments), end) + 1, segment)
 
 
 class Iterator:
@@ -68,10 +61,16 @@ class Iterator:
 
     def addRows(self, features: list[Feature], checkFlag=False) -> None:
         for feature in features:
+            QgsMessageLog.logMessage(
+                f"Adicionando items do iterator para {feature}",
+                "HydroFlow",
+                Qgis.MessageLevel.Info,
+            )
+
             if checkFlag and not feature.process:
                 continue
 
-            for segment in feature.segments_list:
+            for segment in feature.segmentsList:
                 self.rows.append(
                     IteratorRow(
                         point=Vertex(x=segment.a.x, y=segment.a.y),
@@ -127,7 +126,7 @@ class Iterator:
         return iteratorPoint
 
     def iteratorPointComparator(self, primeiro: Vertex, segundo: Vertex) -> int:
-        if self.geo.equalsTo(a=primeiro, b=segundo):
+        if not self.geo.equalsTo(a=primeiro, b=segundo):
             if self.geo.equalsTo(aX=primeiro.x, bX=segundo.x):
                 if self.geo.smallerThan(primeiro.y, segundo.y):
                     return -1
@@ -137,55 +136,50 @@ class Iterator:
             return 1  # x do primeiro > x do segundo.
         return 0
 
-    def addIteratorPoint(
-        self,
-        iteratorRow: IteratorRow,
-        start: int = 0,
-        end: int = 0,
-    ) -> None:
+    def addIteratorPoint(self, iteratorRow: IteratorRow) -> None:
         iteratorPoint = self.createIteratorPoint(
             iteratorRow.point, iteratorRow.segmentA, iteratorRow.segmentB
         )
 
-        if not self.points:
-            self.points.append(iteratorPoint)
-            return
+        if self.points:
+            for i, item in enumerate(self.points):
+                comp = self.iteratorPointComparator(iteratorRow.point, item.point)
 
-        i = round((start + end) / 2)
-        while start <= i < end:
-            item = self.points[i]
-            comp = self.iteratorPointComparator(iteratorRow.point, item.point)
+                if comp == 0:
+                    # QgsMessageLog.logMessage(
+                    #     "Ponto de varredura já existe!",
+                    #     "HydroFlow",
+                    #     Qgis.MessageLevel.Info,
+                    # )
+                    item.insertSegment(iteratorRow.segmentA)
+                    if iteratorRow.segmentB:  # Interseção.
+                        item.insertSegment(iteratorRow.segmentB)
+                    return
 
-            if comp == 0:  # São iguais.
-                item.insertSegment(iteratorRow.segmentA)
-                if iteratorRow.segmentB:  # Interseção.
-                    item.insertSegment(iteratorRow.segmentB)
-                return
-            if comp < 0:
-                if i in (0, start, end):
+                if comp < 0:
+                    # QgsMessageLog.logMessage(
+                    #     (
+                    #         f"Ponto de varredura menor! Inserido no índice {i} "
+                    #         f"de {len(self.points)}!"
+                    #     ),
+                    #     "HydroFlow",
+                    #     Qgis.MessageLevel.Info,
+                    # )
                     self.points.insert(i, iteratorPoint)
                     return
-                i -= 1
-            else:
-                if i == len(self.points) - 1:
-                    self.points.append(iteratorPoint)
-                    return
-                if i in (0, start, end):
-                    self.points.insert(i + 1, iteratorPoint)
-                    return
-                i += 1
+
+        # QgsMessageLog.logMessage(
+        #     (
+        #         f"Ponto de varredura é maior que os existentes. "
+        #         f"Inserido no índice {len(self.points)}!"
+        #     ),
+        #     "HydroFlow",
+        #     Qgis.MessageLevel.Info,
+        # )
+        self.points.append(iteratorPoint)
 
     def searchIteratorPoint(self, iteratorLine: float) -> Optional[IteratorPoint]:
-        i = round(len(self.points) / 2)
-        while 0 <= i < len(self.points):
-            item = self.points[i]
-
-            comp = self.iteratorRowXComparator(iteratorLine, item.point)
-
-            if comp == 0:
+        for i, item in enumerate(self.points):
+            if self.iteratorRowXComparator(iteratorLine, item.point) == 0:
                 return self.points.pop(i)
-            if comp < 0 < i:
-                i -= 1
-            elif comp > 0 and i < len(self.points) - 1:
-                i += 1
         return None

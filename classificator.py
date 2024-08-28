@@ -254,7 +254,7 @@ class Classificator:
         """
         result = 0
 
-        if len(self.topologicalRelations.mouths) > 0:
+        if self.topologicalRelations.mouths:
             # Montando os índices dos eventos.
             self.topologicalRelations.buildIndexes()
 
@@ -321,7 +321,7 @@ class Classificator:
                 node = Node(segment.featureId)
 
                 # Processando o fluxo.
-                if len(currentFeature.segments_list) > 1:  # Vários segmentos.
+                if len(currentFeature.segmentsList) > 1:  # Vários segmentos.
                     if segment.segmentId == 0:
                         node.flow = 2  # Inverter!
                     else:

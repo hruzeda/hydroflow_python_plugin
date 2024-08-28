@@ -1,5 +1,7 @@
 import functools
 
+from qgis.core import Qgis, QgsMessageLog
+
 from ..utils.message import Message
 from .segment import Segment
 
@@ -42,59 +44,30 @@ class Relation:
 
     def insert(
         self,
-        start: int,
-        end: int,
         source: Segment,
         destination: Segment,
         relation_type: int,
     ) -> None:
-        item = RelationItem(source, destination, relation_type)
+        newItem = RelationItem(source, destination, relation_type)
 
-        if not self.items:
-            self.items.append(item)
-            return
+        if self.items:
+            for i, item in enumerate(self.items if relation_type == 0 else self.err):
+                comp = self.comparePosition(newItem, item)
 
-        i = round((start + end) / 2)
-        while start <= i < end:
-            middleItem = self.items[i] if relation_type == 0 else self.err[i]
-
-            # Comparando os itens.
-            comp = self.comparePosition(item, middleItem)
-
-            # (item < itemMeio)
-            if comp == -1:
-                if i in (start, end):  # (inicio == fim) Não encontrou.
-                    # Inserir no ponteiro atual(meio).
-                    if relation_type == 0:
-                        self.items.insert(i, item)
-                        return
-                    self.err.insert(i, item)
+                if comp == 0:
                     return
-                if i > start:  # (meio > 0)
-                    i -= 1
-                else:  # É inicio da lista (meio = 0).
+
+                if comp < 0:
                     if relation_type == 0:
-                        self.items.insert(0, item)
-                        return
-                    self.err.insert(0, item)
+                        self.items.insert(i, newItem)
+                    else:
+                        self.err.insert(i, newItem)
                     return
-            elif comp == 1:
-                if relation_type == 0:
-                    if i == len(self.items) - 1:  # Se meio é ultimo elemento.
-                        self.items.append(item)
-                        return
-                    if i == end:
-                        self.items.insert(i, item)
-                        return
-                    i += 1
-                else:  # Cadastrar relações indesejadas.
-                    if i == len(self.err) - 1:  # Se meio é ultimo elemento.
-                        self.err.append(item)
-                        return
-                    if i == end:
-                        self.err.insert(i, item)
-                        return
-                    i += 1
+
+        if relation_type == 0:
+            self.items.append(newItem)
+        else:
+            self.err.append(newItem)
 
     def addMouth(self, drainage: Segment, boundary: Segment) -> None:
         # Garantindo que o primeiro argumento é da bacia.
@@ -117,13 +90,21 @@ class Relation:
             # Inserindo em fozes.
             self.mouths.append(item)
 
-    def addRelation(self, source: Segment, destination: Segment, relation_type: int):
+    def addRelation(self, source: Segment, destination: Segment, relationType: int):
         """
         Tipos de relação topológica:
         0 - Encosta
         1 - Toca
         2 - Intercepta
         """
+        QgsMessageLog.logMessage(
+            (
+                f"Adicionando relação entre FID {source.featureId} "
+                f"e FID {destination.featureId} do tipo {relationType}."
+            ),
+            "HydroFlow",
+            Qgis.MessageLevel.Info,
+        )
 
         # Garantindo que o FID do primeiro segmento seja menor que o FID do segundo.
         if destination.featureId < source.featureId:
@@ -131,7 +112,7 @@ class Relation:
 
         # Verificando se é relação entre foz e limite.
         # Só aceita relação topológica do tipo encosta entre foz e limite da bacia!
-        if source.setId != destination.setId and relation_type == 0:
+        if source.setId != destination.setId and relationType == 0:
             self.addMouth(source, destination)  # Versão 1.3!
 
         # Verificando se os segmenos são de feições diferentes da bacia.
@@ -140,22 +121,18 @@ class Relation:
             and source.setId == 0
             and destination.setId == 0
         ):
-            if relation_type == 0:  # Escosta.
+            if relationType == 0:  # Escosta.
                 if not self.items:
                     self.items.append(
-                        RelationItem(source, destination, relation_type)
+                        RelationItem(source, destination, relationType)
                     )
                 else:
-                    self.insert(
-                        0, len(self.items) - 1, source, destination, relation_type
-                    )
+                    self.insert(source, destination, relationType)
             else:  # Tipo de evento errado. Incluindo na lista de erros.
                 if not self.err:
-                    self.err.append(RelationItem(source, destination, relation_type))
+                    self.err.append(RelationItem(source, destination, relationType))
                 else:
-                    self.insert(
-                        0, len(self.err) - 1, source, destination, relation_type
-                    )
+                    self.insert(source, destination, relationType)
         # Os segmentos da orígem e destino são da mesma feição. Não gravar!
 
     def findChildSegments(
@@ -230,16 +207,9 @@ class Relation:
         return 1
 
     def findPrimaryIndex(self, featureId: int) -> int:
-        i = round(len(self.primaryIndex) / 2)
-        while 0 <= i < len(self.primaryIndex):
-            item = self.primaryIndex[i]
-
+        for item in self.primaryIndex:
             if featureId == item.featureId:
                 return item.value
-            if featureId < item.featureId:
-                i -= 1
-            else:
-                i += 1
         return -1
 
     def compareIndexItems(self, a: IndexItem, b: IndexItem) -> int:

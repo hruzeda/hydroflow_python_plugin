@@ -19,17 +19,8 @@ class Position:
             self.list.pop(indice)
 
     def locate(self, segment: Segment) -> int:
-        i = round(len(self.list) / 2)
-        while 0 <= i < len(self.list):
-            item = self.list[i]
-
-            comp = segment.compareTo(item)
-
-            if comp < 0:
-                i -= 1
-            elif comp > 0:
-                i += 1
-            else:
+        for i, item in enumerate(self.list):
+            if segment.compareTo(item) == 0:
                 return i
         return -1
 
@@ -108,28 +99,16 @@ class Position:
         return result
 
     def insert(self, segment: Segment) -> int:
-        if not self.list:
-            self.list.append(segment)
-            return 0
+        if self.list:
+            for i, item in enumerate(self.list):
+                comp = self.comparePosition(segment.a.x, segment, item)
 
-        i = round(len(self.list) / 2)
-        while 0 <= i < len(self.list):
-            item = self.list[i]
+                if comp == 0:
+                    return i
 
-            comp = self.comparePosition(segment.a.x, segment, item)
-
-            if comp < 0:
-                if i == len(self.list) - 1:
-                    self.list.append(segment)
-                    return len(self.list) - 1
-                i += 1
-            elif comp > 0:
-                if i == 0:
-                    self.list.insert(0, segment)
-                    return 0
-                i -= 1
-            else:
-                return i
+                if comp > 0:
+                    self.list.insert(i, segment)
+                    return i
 
         self.list.append(segment)
         return len(self.list) - 1

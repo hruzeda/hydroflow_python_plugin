@@ -28,16 +28,13 @@ class Segment:
             and abs(self.a.y - self.b.y) <= tolerance
         )
 
-    def isHorizontal(self, tolerancia: float) -> bool:
-        if not self.isPoint(tolerancia):
-            if abs(self.a.y - self.b.y) <= tolerancia:
-                return True
-        return False
+    def isHorizontal(self, tolerance: float) -> bool:
+        return not self.isPoint(tolerance) and abs(self.a.y - self.b.y) <= tolerance
 
     def isVertical(self, tolerance: float):
         return not self.isPoint(tolerance) and abs(self.a.x - self.b.x) <= tolerance
 
-    def compareTo(self, segmento: "Segment") -> int:
+    def compareTo(self, segment: "Segment") -> int:
         # Compara dois segmentos
         # Valores de retorno:
         #  1 - se este objeto é menor que o informado.
@@ -48,16 +45,16 @@ class Segment:
         #  2º - idFeicao;
         #  3° - id.
 
-        if self.featureId < segmento.featureId:
+        if self.featureId < segment.featureId:
             return -1
-        if self.featureId > segmento.featureId:
+        if self.featureId > segment.featureId:
             return 1
-        if self.setId and segmento.setId and self.setId < segmento.setId:
+        if self.setId and segment.setId and self.setId < segment.setId:
             return -1
-        if self.setId and segmento.setId and self.setId > segmento.setId:
+        if self.setId and segment.setId and self.setId > segment.setId:
             return 1
-        if self.segmentId < segmento.segmentId:
+        if self.segmentId < segment.segmentId:
             return -1
-        if self.segmentId > segmento.segmentId:
+        if self.segmentId > segment.segmentId:
             return 1
         return 0

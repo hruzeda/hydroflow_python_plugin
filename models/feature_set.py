@@ -1,10 +1,11 @@
 from typing import Optional
 
 from qgis.gui import Qgis
+from qgis.core import QgsVectorLayer
 
 from .attribute import Attribute
 from .feature import Feature
-from .new_feature_attribute import NewFeatureAttribute
+from .new_feature_attribute import NewFeatureAttributes
 from .observation import Observation
 
 
@@ -15,14 +16,16 @@ class FeatureSet:
         fileName: str,
         typeCode: Qgis.WkbType,
         obs: Observation,
+        raw: QgsVectorLayer,
     ) -> None:
         self.featureSetId = featureSetId
         self.fileName = fileName
         self.typeCode = typeCode
         self.featuresList: list[Feature] = []
         self.newFeaturesList: list[Feature] = []
-        self.newFeaturesAttributes: list[NewFeatureAttribute] = []
+        self.newFeaturesAttributes: list[NewFeatureAttributes] = []
         self.obs = obs
+        self.raw = raw
 
     def getFeature(self, featureId: int) -> Optional[Feature]:
         if 0 <= featureId < len(self.featuresList):
@@ -59,29 +62,11 @@ class FeatureSet:
         if self.obs:
             self.obs.cleanup()
 
-    def getNewFeatureAttributes(self, featureId: int) -> Optional[Attribute]:
-        index = self.findAttributeIndex(featureId)
-        if index != -1:
-            reg = self.newFeaturesAttributes[index]
-            return reg.attribute
-        return None
-
-    def findAttributeIndex(self, featureId: int) -> int:
-        i = round(len(self.newFeaturesAttributes) / 2)
-        while 0 <= i < len(self.newFeaturesAttributes):
-            # Calculando o meio (indice).
-
-            # Lendo o registro do meio.
-            reg = self.newFeaturesAttributes[i]
-
-            # Analisando.
+    def getNewFeatureAttributes(self, featureId: int) -> Optional[list[Attribute]]:
+        for reg in self.newFeaturesAttributes:
             if featureId == reg.featureId:
-                return i
-            if featureId < reg.featureId:
-                i -= 1
-            else:
-                i += 1
-        return -1
+                return reg.attributes
+        return None
 
     def getTotalFeatures(self) -> int:
         return len(self.featuresList) + len(self.newFeaturesList)
