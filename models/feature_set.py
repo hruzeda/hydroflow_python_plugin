@@ -44,23 +44,23 @@ class FeatureSet:
                 featureId - len(self.featuresList)
             ].setClassification(flow, strahler, shreve)
 
-    def cleanup(self) -> None:
-        # Limpando as feiçoes.
-        for feature in self.featuresList:
-            feature.cleanup()
-        self.featuresList = []
+    # def cleanup(self) -> None:
+    #     # Limpando as feiçoes.
+    #     for feature in self.featuresList:
+    #         feature.cleanup()
+    #     self.featuresList = []
 
-        # Limpando as feiçoes novas.
-        for feature in self.newFeaturesList:
-            feature.cleanup()
-        self.newFeaturesList = []
+    #     # Limpando as feiçoes novas.
+    #     for feature in self.newFeaturesList:
+    #         feature.cleanup()
+    #     self.newFeaturesList = []
 
-        # Limpando os atributos das feições novas.
-        self.newFeaturesAttributes = []
+    #     # Limpando os atributos das feições novas.
+    #     self.newFeaturesAttributes = []
 
-        # //Limpando as observações.
-        if self.obs:
-            self.obs.cleanup()
+    #     # //Limpando as observações.
+    #     if self.obs:
+    #         self.obs.cleanup()
 
     def getNewFeatureAttributes(self, featureId: int) -> Optional[list[Attribute]]:
         for reg in self.newFeaturesAttributes:

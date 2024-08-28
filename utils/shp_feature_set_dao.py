@@ -41,8 +41,6 @@ class SHPFeatureSetDAO:
             return None
 
         # Initialize variables
-        newFeaturesList: list[Feature] = []
-        new_features_attr: list[NewFeatureAttributes] = []
         obs = Observation()
         featureSet = FeatureSet(shapeType, fileName, layer.wkbType(), obs, layer)
 
@@ -51,7 +49,7 @@ class SHPFeatureSetDAO:
         msg_3 = "Feição não processada."
 
         # Montando as feições
-        new_record = layer.featureCount()
+        newFeatureId = layer.featureCount()
         for featureId, feature in enumerate(layer.getFeatures()):
             geometry = feature.geometry()
             if geometry.isMultipart():
@@ -129,42 +127,42 @@ class SHPFeatureSetDAO:
                             segmentsList=segmentsList,
                         )
                         featureObject.hasObservation = True
-                        featureSet.featuresList = [featureObject]
                         obs.set_value(featureId, msg_1)
+
+                        featureSet.featuresList.append(featureObject)
                     else:  # Adicionar novo registro no ShapeFile.
                         featureObject = Feature(
-                            featureId=new_record,
+                            featureId=newFeatureId,
                             setId=shapeType,
                             featureType=geometry.wkbType(),
                             vertexList=vertexList,
                             segmentsList=segmentsList,
                         )
                         featureObject.hasObservation = True
-                        newFeaturesList.append(featureObject)
+                        obs.set_value(partId, msg_2 + str(featureId) + ".")
 
-                        new_features_attr.append(
+                        featureSet.newFeaturesList.append(featureObject)
+                        featureSet.newFeaturesAttributes.append(
                             NewFeatureAttributes(
-                                featureId=new_record,
+                                featureId=newFeatureId,
                                 attributes=self.readAttributes(layer, feature.id()),
                             )
                         )
+                        newFeatureId += 1
 
-                        obs.set_value(partId, msg_2 + str(featureId) + ".")
             else:
-                # Handle singlepart geometries
                 vertexList = [
                     Vertex(x=point.x(), y=point.y())
                     for point in geometry.asPolyline()
                 ]
                 if len(vertexList) == 1:
-                    # Handle point geometries with a degenerate segment
                     featureObject = Feature(
                         featureId=feature.id(),
                         setId=shapeType,
                         featureType=geometry.wkbType(),
                         vertexList=vertexList,
                         segmentsList=[
-                            Segment(
+                            Segment(  # Montando um segmento degenerado!
                                 segmentId=0,
                                 featureId=featureId,
                                 setId=shapeType,
@@ -173,12 +171,11 @@ class SHPFeatureSetDAO:
                             )
                         ],
                     )
-                    if shapeType == 0:
+                    if shapeType == 0:  # É bacia. Não processar o elemento!
                         featureObject.process = False
                         featureObject.hasObservation = True
                         obs.set_value(feature.id(), msg_3)
-                else:
-                    # Handle normal geometries
+                else:  # Não tem vertices! Situação de erro do ShapeFile.
                     featureObject = Feature(
                         featureId=feature.id(),
                         setId=shapeType,
@@ -188,10 +185,9 @@ class SHPFeatureSetDAO:
                     featureObject.process = False
                     featureObject.hasObservation = True
                     obs.set_value(feature.id(), msg_3)
-                featureSet.featuresList = [featureObject]
+                featureSet.featuresList.append(featureObject)
 
-        # Set the attributes for the figura (ConjuntoFeicao object)
-        featureSet.newFeaturesList = newFeaturesList
+        # Cadastrando demais atributos da figura.
         featureSet.obs = obs
 
         return featureSet

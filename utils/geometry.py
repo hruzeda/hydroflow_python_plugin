@@ -6,13 +6,13 @@ from ..models.vertex import Vertex
 
 
 class Geometry:
-    def __init__(self, tolerance=0):
+    def __init__(self, tolerance=0) -> None:
         self.tolerance = tolerance
 
-    def smallerThan(self, a, b):
+    def smallerThan(self, a, b) -> bool:
         return a + self.tolerance < b
 
-    def greaterThan(self, a, b):
+    def greaterThan(self, a, b) -> bool:
         return a - self.tolerance > b
 
     def equalsTo(
@@ -71,13 +71,11 @@ class Geometry:
         b = segment.b
 
         # o segmento é vertical. Retorna o vértice com o menor "y"!
-        if segment.isVertical(self.tolerance) or a.withinIteratorRow(
-            x, self.tolerance
-        ):
+        if segment.isVertical(self.tolerance) or abs(x - a.x) <= self.tolerance:
             p = Vertex(a.x, a.y)
         else:  # o segmento não é vertical.
-            if b.withinIteratorRow(
-                x, self.tolerance
+            if (
+                abs(x - b.x) <= self.tolerance
             ):  # A linha de varredura "x" intercepta o vértice "b".
                 p = Vertex(b.x, b.y)
             else:

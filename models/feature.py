@@ -34,9 +34,9 @@ class Feature:
         self.strahler = strahler
         self.shreve = shreve
 
-    def cleanup(self) -> None:
-        self.vertexList = []
-        self.segmentsList = []
+    # def cleanup(self) -> None:
+    #     self.vertexList = []
+    #     self.segmentsList = []
 
     def __str__(self) -> str:
         return (

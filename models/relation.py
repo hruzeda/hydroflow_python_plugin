@@ -35,12 +35,12 @@ class Relation:
         self.index: list[IndexItem] = []
         self.primaryIndex: list[IndexItem] = []
 
-    def cleanup(self) -> None:
-        self.items.clear()
-        self.err.clear()
-        self.mouths.clear()
-        self.index.clear()
-        self.primaryIndex.clear()
+    # def cleanup(self) -> None:
+    #     self.items.clear()
+    #     self.err.clear()
+    #     self.mouths.clear()
+    #     self.index.clear()
+    #     self.primaryIndex.clear()
 
     def insert(
         self,
@@ -50,19 +50,18 @@ class Relation:
     ) -> None:
         newItem = RelationItem(source, destination, relation_type)
 
-        if self.items:
-            for i, item in enumerate(self.items if relation_type == 0 else self.err):
-                comp = self.comparePosition(newItem, item)
+        for i, item in enumerate(self.items if relation_type == 0 else self.err):
+            comp = self.comparePosition(newItem, item)
 
-                if comp == 0:
-                    return
+            if comp == 0:
+                return
 
-                if comp < 0:
-                    if relation_type == 0:
-                        self.items.insert(i, newItem)
-                    else:
-                        self.err.insert(i, newItem)
-                    return
+            if comp < 0:
+                if relation_type == 0:
+                    self.items.insert(i, newItem)
+                else:
+                    self.err.insert(i, newItem)
+                return
 
         if relation_type == 0:
             self.items.append(newItem)
@@ -102,7 +101,7 @@ class Relation:
                 f"Adicionando relação entre FID {source.featureId} "
                 f"e FID {destination.featureId} do tipo {relationType}."
             ),
-            "HydroFlow",
+            "HydroFlow.Relation",
             Qgis.MessageLevel.Info,
         )
 
@@ -113,6 +112,9 @@ class Relation:
         # Verificando se é relação entre foz e limite.
         # Só aceita relação topológica do tipo encosta entre foz e limite da bacia!
         if source.setId != destination.setId and relationType == 0:
+            QgsMessageLog.logMessage(
+                "FOZ!", "HydroFlow.Relation", Qgis.MessageLevel.Info
+            )
             self.addMouth(source, destination)  # Versão 1.3!
 
         # Verificando se os segmenos são de feições diferentes da bacia.

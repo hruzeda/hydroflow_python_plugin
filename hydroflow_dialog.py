@@ -153,7 +153,7 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
             self.displayMessage(resultado)  # Valores para resultado: 0, 2, 3 ou 9.
         except Exception:  # pylint: disable=broad-exception-caught
             QgsMessageLog.logMessage(
-                traceback.format_exc(), "Hydroflow", Qgis.MessageLevel.Critical
+                traceback.format_exc(), "Hydroflow", Qgis.MessageLevel.Critical, True
             )
             self.displayMessage(5)
 

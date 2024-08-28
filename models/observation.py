@@ -8,8 +8,8 @@ class Observation:
     def __init__(self):
         self.list = []
 
-    def cleanup(self):
-        self.list = []
+    # def cleanup(self):
+    #     self.list = []
 
     def get_value(self, featureId: int) -> str:
         for item in self.list:

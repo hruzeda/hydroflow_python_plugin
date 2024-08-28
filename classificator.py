@@ -8,7 +8,7 @@ from .models.segment import Segment
 from .models.vertex import Vertex
 from .params import Params
 from .utils.geometry import Geometry
-from .utils.iterator import Iterator, IteratorRow
+from .utils.scanner import Scanner, ScanLine
 from .utils.message import Message
 
 
@@ -24,17 +24,17 @@ class Classificator:
         self.boundary = boundary
         self.params = params
         self.geo = Geometry(params.toleranceXY)
-        self.iterator = Iterator(self.geo)
+        self.scanner = Scanner(self.geo)
         self.topologicalRelations = Relation(log)
         self.position = Position(self.geo, log)
         self.log = log
 
-    def cleanup(self):
-        self.log.cleanup()
-        self.geo = Geometry(self.params.toleranceXY)
-        self.iterator = Iterator(self.geo)
-        self.topologicalRelations.cleanup()
-        self.position = Position(self.geo, self.log)
+    # def cleanup(self):
+    #     self.log.cleanup()
+    #     self.geo = Geometry(self.params.toleranceXY)
+    #     self.scanner = Scanner(self.geo)
+    #     self.topologicalRelations.cleanup()
+    #     self.position = Position(self.geo, self.log)
 
     def classifyWaterBasin(self) -> int:
         """
@@ -49,10 +49,10 @@ class Classificator:
         result = 0
 
         # Montando a linha de varredura.
-        self.buildIterator()
+        self.buildScanner()
 
         # Varrendo o plano;
-        self.iteratePlane()
+        self.scanPlane()
 
         # Verificando a existência de relações topológicas inesperadas
         # (toque e interseção).
@@ -69,43 +69,42 @@ class Classificator:
                 result = self.evaluateProcessing()
         return result
 
-    def buildIterator(self) -> None:
-        self.iterator.addRows(self.drainage.featuresList, True)
-        self.iterator.addRows(self.drainage.newFeaturesList, True)
-        self.iterator.addRows(self.boundary.featuresList, True)
-        self.iterator.sortRows()
+    def buildScanner(self) -> None:
+        self.scanner.addLines(self.drainage.featuresList)
+        self.scanner.addLines(self.drainage.newFeaturesList)
+        self.scanner.addLines(self.boundary.featuresList)
+        self.scanner.sortLines()
 
-    def iteratePlane(self) -> None:
-        lv = self.iterator.next()
-        if not lv:
-            return
-        previousIteration = lv.point.x
+    def scanPlane(self) -> None:
+        scanLine = self.scanner.next()
+        if scanLine:
+            previousPoint = scanLine.vertex
 
-        while lv is not None:
-            record = lv.segmentA
+        while scanLine is not None:
+            record = scanLine.segmentA
 
-            if not self.geo.equalsTo(aX=lv.point.x, bX=previousIteration):
-                self.processIteratorPoints(previousIteration)
-                previousIteration = lv.point.x
+            if previousPoint.x != scanLine.vertex.x:
+                self.processScanPoints(previousPoint)
+                previousPoint = scanLine.vertex
 
             # Inserir segmento(s) no ponto de varredura.
-            self.iterator.addIteratorPoint(lv)
+            self.scanner.addScanPoint(scanLine)
 
             # Processando o evento da linha de varredura.
-            if lv.eventType == 0:  # Extremo esquerdo. Segmento entrando.
+            if scanLine.eventType == 0:  # Extremo esquerdo. Segmento entrando.
                 # Inserindo em posição.
                 index_A = self.position.insert(record)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
                 if above:  # Se há segmento acima:
-                    self.evaluateSegments(lv.point, above, record)
+                    self.evaluateSegments(scanLine.vertex, above, record)
 
                 # Verificando segmento imediatamente abaixo.
                 below = self.position.below(index_A)
                 if below:  # Se há segmento abaixo:
-                    self.evaluateSegments(lv.point, record, below)
-            elif lv.eventType == 1:
+                    self.evaluateSegments(scanLine.vertex, record, below)
+            elif scanLine.eventType == 1:
                 # Localizando o segmento em Posicao.
                 index_A = self.position.locate(record)
 
@@ -115,22 +114,22 @@ class Classificator:
                     # Verificando segmento imediatamente abaixo.
                     below = self.position.below(index_A)
                     if below:
-                        self.evaluateSegments(lv.point, above, below)
+                        self.evaluateSegments(scanLine.vertex, above, below)
 
                 # Excluindo de posição.
                 self.position.delete(index_A)
-            elif lv.eventType == 2:  # Interseção.
+            elif scanLine.eventType == 2:  # Interseção.
                 # Separando interseção por toque.
                 if (
-                    not self.geo.equalsTo(lv.point, lv.segmentA.a)
-                    and not self.geo.equalsTo(lv.point, lv.segmentA.b)
-                    and lv.segmentB
-                    and not self.geo.equalsTo(lv.point, lv.segmentB.a)
-                    and not self.geo.equalsTo(lv.point, lv.segmentB.b)
+                    not self.geo.equalsTo(scanLine.vertex, scanLine.segmentA.a)
+                    and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentA.b)
+                    and scanLine.segmentB
+                    and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentB.a)
+                    and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentB.b)
                 ):
                     # Localizando os segmentos.
-                    index_A = self.position.locate(lv.segmentA)
-                    index_B = self.position.locate(lv.segmentB)
+                    index_A = self.position.locate(scanLine.segmentA)
+                    index_B = self.position.locate(scanLine.segmentB)
 
                     # Trocando segmentos de posição .
                     self.position.swap(index_A, index_B)
@@ -138,18 +137,21 @@ class Classificator:
                     # Verificando segmento imediatamente acima.
                     above = self.position.above(index_A)
                     if above:  # Se há segmento acima:
-                        self.evaluateSegments(lv.point, above, lv.segmentB)
+                        self.evaluateSegments(
+                            scanLine.vertex, above, scanLine.segmentB
+                        )
 
                     # Verificando segmento imediatamente abaixo.
                     below = self.position.below(index_B)
                     if below:  # Se há segmento abaixo:
-                        self.evaluateSegments(lv.point, lv.segmentA, below)
+                        self.evaluateSegments(
+                            scanLine.vertex, scanLine.segmentA, below
+                        )
 
-            lv = self.iterator.next()
+            scanLine = self.scanner.next()
 
         # Processando os pontos da ultima linha de varredura.
-        self.processIteratorPoints(previousIteration)
-        self.position.cleanup()
+        self.processScanPoints(previousPoint)
 
     def evaluateSegments(
         self, point: Vertex, above: Segment, below: Segment
@@ -186,21 +188,26 @@ class Classificator:
                     )
                 ):
                     # Inserindo a interseção na lista de varredura.
-                    self.iterator.rows.append(
-                        IteratorRow(intersectionPoint, 2, above, below)
+                    self.scanner.lines.append(
+                        ScanLine(
+                            vertex=intersectionPoint,
+                            segmentA=above,
+                            segmentB=below,
+                            eventType=2,
+                        )
                     )
 
-    def processIteratorPoints(self, iteratorLine: float) -> None:
+    def processScanPoints(self, previousVertex: Vertex) -> None:
         test = []
 
         # Obtendo o primeiro ponto de varradura.
-        iteratorPoint = self.iterator.searchIteratorPoint(iteratorLine)
-        while iteratorPoint:
-            if len(iteratorPoint.segments) > 1:  # Há relações topológicas.
-                point = iteratorPoint.point
+        scanVertex = self.scanner.nextInLine(previousVertex)
+        while scanVertex is not None:
+            if len(scanVertex.segments) > 1:  # Há relações topológicas.
+                point = scanVertex.vertex
 
                 # Testando os segmentos.
-                for segment in iteratorPoint.segments:
+                for segment in scanVertex.segments:
                     test.append(
                         (
                             self.geo.equalsTo(point, segment.a)
@@ -214,25 +221,25 @@ class Classificator:
 
                 # Avaliando as relações topológicas.
                 i = 0
-                while i < len(iteratorPoint.segments) - 1:
+                while i < len(scanVertex.segments) - 1:
                     j = i + 1
-                    while j < len(iteratorPoint.segments):
+                    while j < len(scanVertex.segments):
                         if test[i] and test[j]:  # Encosta.
                             self.topologicalRelations.addRelation(
-                                iteratorPoint.segments[i],
-                                iteratorPoint.segments[j],
+                                scanVertex.segments[i],
+                                scanVertex.segments[j],
                                 0,
                             )
                         elif test[i] or test[j]:  # Toca.
                             self.topologicalRelations.addRelation(
-                                iteratorPoint.segments[i],
-                                iteratorPoint.segments[j],
+                                scanVertex.segments[i],
+                                scanVertex.segments[j],
                                 1,
                             )
                         else:  # Intercepta.
                             self.topologicalRelations.addRelation(
-                                iteratorPoint.segments[i],
-                                iteratorPoint.segments[j],
+                                scanVertex.segments[i],
+                                scanVertex.segments[j],
                                 2,
                             )
                         j += 1
@@ -240,7 +247,7 @@ class Classificator:
 
                 test.clear()
 
-            iteratorPoint = self.iterator.searchIteratorPoint(iteratorLine)
+            scanVertex = self.scanner.nextInLine(previousVertex)
 
     def buildTree(self) -> int:
         """

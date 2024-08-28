@@ -104,8 +104,8 @@ class Controller:
         # formLog.exibirLog()
 
         # Apagando os objetos.
-        classificator.cleanup()
-        boundary.cleanup()
-        drainage.cleanup()
+        # classificator.cleanup()
+        # boundary.cleanup()
+        # drainage.cleanup()
 
         return result

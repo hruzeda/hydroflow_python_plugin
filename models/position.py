@@ -6,13 +6,13 @@ from .segment import Segment
 
 
 class Position:
-    def __init__(self, geo: Geometry, log: Message):
+    def __init__(self, geo: Geometry, log: Message) -> None:
         self.geo = geo
         self.log = log
         self.list: list[Segment] = []
 
-    def cleanup(self) -> None:
-        self.list.clear()
+    # def cleanup(self) -> None:
+    #     self.list.clear()
 
     def delete(self, indice: int) -> None:
         if self.list and indice < len(self.list):
@@ -25,13 +25,13 @@ class Position:
         return -1
 
     def comparePosition(
-        self, iteratorRow: float, first: Segment, second: Segment
+        self, scanLine: float, first: Segment, second: Segment
     ) -> int:
         result = 0
 
         # Calculando os pontos relativos.
-        pFirst = self.geo.calculateRelativePoint(iteratorRow, first)
-        pSecond = self.geo.calculateRelativePoint(iteratorRow, second)
+        pFirst = self.geo.calculateRelativePoint(scanLine, first)
+        pSecond = self.geo.calculateRelativePoint(scanLine, second)
 
         if self.geo.equalsTo(pFirst, pSecond):
             # Mesma altura relativa.
@@ -72,12 +72,12 @@ class Position:
 
                 # Determinando a linha de varredura.
                 if self.geo.greaterThan(first.a.x, second.a.x):
-                    iteratorRow = first.a.x
+                    scanLine = first.a.x
                 else:
-                    iteratorRow = second.a.x
+                    scanLine = second.a.x
 
                 # Comparando os segmentos.
-                result = self.comparePosition(iteratorRow, first, second)
+                result = self.comparePosition(scanLine, first, second)
 
             # Tratando o caso 8.
             elif (
@@ -99,16 +99,15 @@ class Position:
         return result
 
     def insert(self, segment: Segment) -> int:
-        if self.list:
-            for i, item in enumerate(self.list):
-                comp = self.comparePosition(segment.a.x, segment, item)
+        for i, item in enumerate(self.list):
+            comp = self.comparePosition(segment.a.x, segment, item)
 
-                if comp == 0:
-                    return i
+            if comp == 0:
+                return i
 
-                if comp > 0:
-                    self.list.insert(i, segment)
-                    return i
+            if comp < 0:
+                self.list.insert(i, segment)
+                return i
 
         self.list.append(segment)
         return len(self.list) - 1

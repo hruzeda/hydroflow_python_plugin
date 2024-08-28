@@ -10,8 +10,8 @@ class Message:
         self.result = ""
         self.list: list[str] = []
 
-    def cleanup(self):
-        self.list = []
+    # def cleanup(self):
+    #     self.list = []
 
     def append(self, message):
         self.list.append(message)

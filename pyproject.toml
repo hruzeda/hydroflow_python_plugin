@@ -11,7 +11,8 @@ explicit_package_bases = false
 namespace_packages = false
 exclude = [
   'test',
-  'resources_rc.py'
+  'resources_rc.py',
+  'hydroflow_dialog_base_ui.py'
 ]
 
 [[tool.mypy.overrides]]

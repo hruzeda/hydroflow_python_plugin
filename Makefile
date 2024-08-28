@@ -196,7 +196,7 @@ lint:
 	@echo "------------------------------------"
 	@echo "Running mypy"
 	@echo "------------------------------------"
-	mypy --config-file .\pyproject.toml --exclude hydroflow_dialog_base_ui.py .
+	mypy --config-file .\pyproject.toml .
 
 format:
 	@echo
