@@ -11,8 +11,13 @@ class Controller:
     def __init__(self, params: Params):
         self.params = params
 
-    def validateFile(self, fileName: str, baseName: str) -> bool:
-        return SHPFeatureSetDAO().loadFeatureSet(fileName, baseName) is not None
+    def validateFile(self, fileName: str, baseName: str, shapeType: int) -> bool:
+        return (
+            SHPFeatureSetDAO(self.params.toleranceXY).loadFeatureSet(
+                fileName, baseName, shapeType
+            )
+            is not None
+        )
 
     def displayMessage(self, result: int) -> None:
         if result == 0:

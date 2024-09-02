@@ -141,11 +141,11 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):  # type: ignor
 
             con = Controller(params)
 
-            if not con.validateFile(drainageFileName, "drenagem"):
+            if not con.validateFile(drainageFileName, "drenagem", 0):
                 self.displayMessage(2)
                 return
 
-            if not con.validateFile(boundaryFileName, "limite"):
+            if not con.validateFile(boundaryFileName, "limite", 1):
                 self.displayMessage(3)
                 return
 

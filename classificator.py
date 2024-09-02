@@ -204,46 +204,41 @@ class Classificator:
         scanVertex = self.scanner.nextInLine(previousVertex)
         while scanVertex is not None:
             if len(scanVertex.segments) > 1:  # Há relações topológicas.
-                point = scanVertex.vertex
-
                 # Testando os segmentos.
                 for segment in scanVertex.segments:
                     test.append(
                         (
-                            self.geo.equalsTo(point, segment.a)
+                            self.geo.equalsTo(scanVertex.vertex, segment.a)
                             and (segment.a.isExtremity() or segment.setId == 1)
                         )
                         or (
-                            self.geo.equalsTo(point, segment.b)
+                            self.geo.equalsTo(scanVertex.vertex, segment.b)
                             and (segment.b.isExtremity() or segment.setId == 1)
                         )
                     )
 
                 # Avaliando as relações topológicas.
-                i = 0
-                while i < len(scanVertex.segments) - 1:
+                for i in range(len(scanVertex.segments) - 1):
                     j = i + 1
-                    while j < len(scanVertex.segments):
-                        if test[i] and test[j]:  # Encosta.
-                            self.topologicalRelations.addRelation(
-                                scanVertex.segments[i],
-                                scanVertex.segments[j],
-                                0,
-                            )
-                        elif test[i] or test[j]:  # Toca.
-                            self.topologicalRelations.addRelation(
-                                scanVertex.segments[i],
-                                scanVertex.segments[j],
-                                1,
-                            )
-                        else:  # Intercepta.
-                            self.topologicalRelations.addRelation(
-                                scanVertex.segments[i],
-                                scanVertex.segments[j],
-                                2,
-                            )
-                        j += 1
-                    i += 1
+
+                    if test[i] and test[j]:  # Encosta.
+                        self.topologicalRelations.addRelation(
+                            scanVertex.segments[i],
+                            scanVertex.segments[j],
+                            0,
+                        )
+                    elif test[i] or test[j]:  # Toca.
+                        self.topologicalRelations.addRelation(
+                            scanVertex.segments[i],
+                            scanVertex.segments[j],
+                            1,
+                        )
+                    else:  # Intercepta.
+                        self.topologicalRelations.addRelation(
+                            scanVertex.segments[i],
+                            scanVertex.segments[j],
+                            2,
+                        )
 
                 test.clear()
 

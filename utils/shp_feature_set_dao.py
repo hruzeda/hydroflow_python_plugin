@@ -27,12 +27,12 @@ from ..params import Params
 
 
 class SHPFeatureSetDAO:
-    def __init__(self, tolerancia: float = 0) -> None:
-        self.tolerancia = tolerancia
+    def __init__(self, tolerance: float = 0) -> None:
+        self.tolerance = tolerance
 
     # Tipos: 0 - bacia; 1 - limite.
     def loadFeatureSet(
-        self, fileName: str, baseName: str, shapeType: Optional[int] = None
+        self, fileName: str, baseName: str, shapeType: int
     ) -> Optional[FeatureSet]:
         # Lendo o registro
         layer = QgsVectorLayer(fileName, baseName, "ogr")
@@ -55,17 +55,18 @@ class SHPFeatureSetDAO:
             if geometry.isMultipart():
                 # Lendo as partes.
                 vertexId = 0
-                for partId, part in enumerate(geometry.parts()):
+                partsIterator = geometry.parts()
+                for partId, part in enumerate(partsIterator):
                     # Lendo os vértices da parte
-                    vertexList = []
-                    iterator = part.vertices()
-                    for point in iterator:
+                    vertexList: list[Vertex] = []
+                    verticesIterator = part.vertices()
+                    for vertex in verticesIterator:
                         vertexList.append(
                             Vertex(
                                 vertexId=vertexId,
-                                x=point.x(),
-                                y=point.y(),
-                                last=iterator.hasNext(),
+                                x=vertex.x(),
+                                y=vertex.y(),
+                                last=not verticesIterator.hasNext(),
                             )
                         )
                         vertexId += 1
@@ -76,7 +77,7 @@ class SHPFeatureSetDAO:
                         vertexA = vertexList[i]
                         vertexB = vertexList[i + 1]
 
-                        if vertexA.x + self.tolerancia < vertexB.x:
+                        if vertexA.x + self.tolerance < vertexB.x:
                             segmentsList.append(
                                 Segment(
                                     segmentId=len(segmentsList),
@@ -86,7 +87,7 @@ class SHPFeatureSetDAO:
                                     b=vertexB,
                                 )
                             )
-                        elif vertexB.x + self.tolerancia < vertexA.x:
+                        elif vertexB.x + self.tolerance < vertexA.x:
                             segmentsList.append(
                                 Segment(
                                     segmentId=len(segmentsList),
@@ -97,7 +98,7 @@ class SHPFeatureSetDAO:
                                 )
                             )
                         else:  # Vertical
-                            if vertexA.y + self.tolerancia < vertexB.y:
+                            if vertexA.y + self.tolerance < vertexB.y:
                                 segmentsList.append(  # NOSONAR
                                     Segment(
                                         segmentId=len(segmentsList),
@@ -126,8 +127,9 @@ class SHPFeatureSetDAO:
                             vertexList=vertexList,
                             segmentsList=segmentsList,
                         )
-                        featureObject.hasObservation = True
-                        obs.set_value(featureId, msg_1)
+                        if partsIterator.hasNext():
+                            featureObject.hasObservation = True
+                            obs.set_value(featureId, msg_1)
 
                         featureSet.featuresList.append(featureObject)
                     else:  # Adicionar novo registro no ShapeFile.
