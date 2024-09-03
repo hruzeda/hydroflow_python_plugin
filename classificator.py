@@ -205,7 +205,7 @@ class Classificator:
         test = []
 
         # Obtendo o primeiro ponto de varradura.
-        scanVertex = self.scanner.nextInLine(previousVertex)
+        scanVertex = self.scanner.nextInLine(previousVertex.x)
         while scanVertex is not None:
             if len(scanVertex.segments) > 1:  # Há relações topológicas.
                 # Testando os segmentos.
@@ -246,7 +246,7 @@ class Classificator:
 
                 test.clear()
 
-            scanVertex = self.scanner.nextInLine(previousVertex)
+            scanVertex = self.scanner.nextInLine(previousVertex.x)
 
     def buildTree(self) -> int:
         """

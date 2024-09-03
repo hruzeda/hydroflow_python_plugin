@@ -27,17 +27,31 @@ class ScanVertex:
         self.segments = [segment]
 
     def insertSegment(self, segment: Segment) -> None:
-        for item in self.segments:
+        if not self.segments:
+            self.segments.append(segment)
+            return
+
+        start = 0
+        end = len(self.segments) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = self.segments[middle]
             comp = segment.compareTo(item)
 
-            if comp == 0:
-                return
-
             if comp < 0:
-                self.segments.insert(comp, segment)
-                return
+                if middle == 0 or start == end:
+                    self.segments.insert(middle, segment)
+                    return
+                end = middle - 1
 
-        self.segments.append(segment)
+            elif comp > 0:
+                if start >= end:
+                    self.segments.append(segment)
+                    return
+                start = middle + 1
+
+            else:
+                return
 
 
 class Scanner:
@@ -55,12 +69,30 @@ class Scanner:
             return self.lines.pop()
         return None
 
-    def nextInLine(self, previousPoint: Vertex) -> Optional[ScanVertex]:
+    def nextInLine(self, scanLine: float) -> Optional[ScanVertex]:
         result = None
-        for i, item in enumerate(self.vertices):
-            if item.vertex.withinTolerance(previousPoint.x, self.geo.tolerance):
-                result = self.vertices.pop(i)
+
+        start = 0
+        end = len(self.vertices) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = self.vertices[middle]
+            comp = self.scanLineComparator(scanLine, item.vertex)
+
+            if comp == 0:
+                result = self.vertices.pop(middle)
                 break
+
+            if comp < 0:
+                if middle <= 0:
+                    break
+                end = middle - 1
+
+            else:
+                if middle >= len(self.vertices) - 1:
+                    break
+                start = middle + 1
+
         return result
 
     def addLines(self, features: list[Feature]) -> None:
@@ -89,19 +121,42 @@ class Scanner:
             self.lines.append(line)
             return
 
-        for i, item in enumerate(self.lines):
-            comp = self.scanLineComparator(line, item)
+        start = 0
+        end = len(self.lines) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = self.lines[middle]
+            comp = self.scanLineComparator2(line, item)
 
-            if comp == 0:  # item já existe. Nada fazer!
-                return
+            if comp > 0:
+                if start == middle:
+                    self.lines.insert(middle, line)
+                    return
+                if middle <= 0:
+                    self.lines.insert(0, line)
+                    return
+                end = middle - 1
 
-            if comp < 0:
-                self.lines.insert(i, line)
+            elif comp < 0:
+                if end == middle:
+                    if middle == len(self.lines) - 1:
+                        self.lines.append(line)
+                        return
+                    self.lines.insert(middle + 1, line)
+                    return
+                start = middle + 1
+
+            else:  # item já existe. nada a fazer.
                 return
 
         self.lines.append(line)
 
-    def scanLineComparator(self, a: ScanLine, b: ScanLine) -> int:
+    def scanLineComparator(self, scanLine: float, vertex: Vertex) -> int:
+        if not vertex.withinTolerance(scanLine, self.geo.tolerance):
+            return 1 if self.geo.smallerThan(scanLine, vertex.x) else -1
+        return 0
+
+    def scanLineComparator2(self, a: ScanLine, b: ScanLine) -> int:
         if self.geo.smallerThan(a.vertex.x, b.vertex.x):
             return -1
         if self.geo.smallerThan(b.vertex.x, a.vertex.x):
@@ -198,17 +253,36 @@ class Scanner:
             scanLine.vertex, scanLine.segmentA, scanLine.segmentB
         )
 
-        for i, item in enumerate(self.vertices):
-            comp = self.scanPointComparator(scanLine.vertex, item.vertex)
+        if not self.vertices:
+            self.vertices.append(scanPoint)
+            return
+
+        start = 0
+        end = len(self.vertices) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = self.vertices[middle]
+            comp = self.scanPointComparator(scanPoint.vertex, item.vertex)
 
             if comp == 0:
                 item.insertSegment(scanLine.segmentA)
-                if scanLine.segmentB:  # Interseção.
+                if scanLine.segmentB:
                     item.insertSegment(scanLine.segmentB)
                 return
 
             if comp < 0:
-                self.vertices.insert(i, scanPoint)
-                return
+                if middle == 0 or start == end:
+                    self.vertices.insert(middle, scanPoint)
+                    return
+                end = middle - 1
+
+            if comp > 0:
+                if middle == len(self.vertices) - 1:
+                    self.vertices.append(scanPoint)
+                    return
+                if start == end:
+                    self.vertices.insert(middle + 1, scanPoint)
+                    return
+                start = middle + 1
 
         self.vertices.append(scanPoint)
