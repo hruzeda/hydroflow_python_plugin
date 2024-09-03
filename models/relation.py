@@ -245,32 +245,27 @@ class Relation:
                 self.primaryIndex.append(IndexItem(indexItem.featureId, i))
 
     def reportUnexpectedRelations(self, log: Message) -> None:
-        msg_1 = (
+        log.append(
             "Erro! Impossível continuar! "
-            "Encontradas relações topológicas inesperadas."
-        )
-        msg_2 = (
+            "Encontradas relações topológicas inesperadas.\n"
             "São esperadas somente relações de encosta, "
             "entretanto foram encontradas as relações:"
         )
-        msg_3 = (
-            "Consulte a documentação deste aplicativo para mais "
-            "detalhes sobre as relações topológicas esperadas e inesperadas."
-        )
-        msg_4 = "Confira a topologia e execute o processamento novamente."
-        log.append(msg_1 + "\n" + msg_2)
 
         if self.err:
             for item in self.err:
-                eventType = (
-                    " toca em FID" if item.relationType == 1 else " intercepta FID"
-                )
                 log.append(
-                    "   FID"
-                    + str(item.source.featureId)
-                    + eventType
-                    + str(item.destination.featureId)
+                    f"    - FID{str(item.source.featureId)}"
+                    + (
+                        " toca em FID"
+                        if item.relationType == 1
+                        else " intercepta FID"
+                    )
+                    + f"{item.destination.featureId}"
                 )
-            log.append("   Total de relações: " + str(len(self.err)) + ".")
-            log.append("\n" + msg_3)
-            log.append(msg_4)
+            log.append(f"    Total de relações: {str(len(self.err))}.\n")
+            log.append(
+                "Consulte a documentação deste aplicativo para mais "
+                "detalhes sobre as relações topológicas esperadas e inesperadas.\n"
+                "Confira a topologia e execute o processamento novamente."
+            )

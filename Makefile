@@ -36,15 +36,15 @@ LOCALES =
 
 
 # translation
-SOURCES = __init__.py classificator.py controller.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py models/__init__.py models/attribute.py models/feature_set.py models/feature.py models/new_feature_attribute.py models/node.py models/observation.py models/position.py models/relation.py models/segment.py models/vertex.py utils/__init__.py utils/geometry.py utils/iterator.py utils/message.py utils/shp_feature_set_dao.py
+SOURCES = __init__.py classificator.py controller.py frmlog_ui.py frmlog.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py models/__init__.py models/attribute.py models/feature_set.py models/feature.py models/new_feature_attribute.py models/node.py models/observation.py models/position.py models/relation.py models/segment.py models/vertex.py utils/__init__.py utils/geometry.py utils/iterator.py utils/message.py utils/shp_feature_set_dao.py
 
 PLUGINNAME = hydroflow
 
-PY_FILES = __init__.py classificator.py controller.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py
+PY_FILES = __init__.py classificator.py controller.py frmlog_ui.py frmlog.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py
 
-UI_FILES = hydroflow_dialog_base.ui
+UI_FILES = frmlog.ui hydroflow_dialog_base.ui
 
-EXTRAS = metadata.txt hydroflow.ico hydroflow.gif search.ico
+EXTRAS = metadata.txt hydroflow.ico hydroflow.png search.ico
 
 EXTRA_DIRS = models utils
 
@@ -190,7 +190,7 @@ lint:
 	@echo "------------------------------------"
 	@echo "Running pylint"
 	@echo "------------------------------------"
-	pylint -rn -sn --ignore-paths test --ignore hydroflow_dialog_base_ui.py,hydroflow.py,plugin_upload.py,resources_rc.py **/*.py
+	pylint -rn -sn --ignore-paths test --ignore frmlog_ui.py,hydroflow_dialog_base_ui.py,hydroflow.py,plugin_upload.py,resources_rc.py **/*.py
 
 	@echo
 	@echo "------------------------------------"

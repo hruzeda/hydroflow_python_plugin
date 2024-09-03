@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from qgis.PyQt import QtWidgets
 
 from .classificator import Classificator
+from .frmlog import FrmLog
 from .params import Params
 from .utils.message import Message
 from .utils.shp_feature_set_dao import SHPFeatureSetDAO
@@ -104,13 +105,9 @@ class Controller:
             result = 9
 
         # Verificando se há mensagens no log.
-        # if log.hasMessages():
-        # formLog = FrmLog(params.origem, log)
-        # formLog.exibirLog()
-
-        # Apagando os objetos.
-        # classificator.cleanup()
-        # boundary.cleanup()
-        # drainage.cleanup()
+        if log.hasMessages():
+            formLog = FrmLog(params.origin, log)
+            formLog.show()
+            formLog.displayLog()
 
         return result

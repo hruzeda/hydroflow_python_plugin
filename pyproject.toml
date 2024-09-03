@@ -17,6 +17,7 @@ explicit_package_bases = false
 namespace_packages = false
 strict = true
 exclude = [
+  'frmlog_ui.py',
   'hydroflow_dialog_base_ui.py',
   'plugin_upload.py',
   'resources_rc.py',

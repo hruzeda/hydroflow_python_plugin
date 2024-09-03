@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\henrique\Desktop\hydroflow\hydroflow-python-plugin\hydroflow_dialog_base.ui'
+# Form implementation generated from reading ui file '.\hydroflow_dialog_base.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -33,6 +33,11 @@ class Ui_HydroflowDialogBase(object):
     def setupUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
         HydroflowDialogBase.setObjectName("HydroflowDialogBase")
         HydroflowDialogBase.resize(464, 276)
+        icon = QtGui.QIcon()
+        icon.addPixmap(
+            QtGui.QPixmap(":hydroflow.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off
+        )
+        HydroflowDialogBase.setWindowIcon(icon)
         self.pushButton_Exec = QtWidgets.QPushButton(HydroflowDialogBase)
         self.pushButton_Exec.setGeometry(QtCore.QRect(347, 162, 88, 28))
         font = QtGui.QFont()
@@ -52,11 +57,11 @@ class Ui_HydroflowDialogBase(object):
         self.pushButton_Lim = QtWidgets.QPushButton(self.groupBox_Lim)
         self.pushButton_Lim.setGeometry(QtCore.QRect(400, 28, 30, 28))
         self.pushButton_Lim.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(
             QtGui.QPixmap(":search.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off
         )
-        self.pushButton_Lim.setIcon(icon)
+        self.pushButton_Lim.setIcon(icon1)
         self.pushButton_Lim.setObjectName("pushButton_Lim")
         self.groupBox = QtWidgets.QGroupBox(HydroflowDialogBase)
         self.groupBox.setGeometry(QtCore.QRect(10, 142, 314, 122))
@@ -111,14 +116,14 @@ class Ui_HydroflowDialogBase(object):
         self.pushButton_HidLn = QtWidgets.QPushButton(self.groupBox_HidLn)
         self.pushButton_HidLn.setGeometry(QtCore.QRect(400, 28, 30, 28))
         self.pushButton_HidLn.setText("")
-        self.pushButton_HidLn.setIcon(icon)
+        self.pushButton_HidLn.setIcon(icon1)
         self.pushButton_HidLn.setObjectName("pushButton_HidLn")
 
         self.retranslateUi(HydroflowDialogBase)
         self.comboBox.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(HydroflowDialogBase)
 
-    def retranslateUi(self, HydroflowDialogBase):
+    def retranslateUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
         _translate = QtCore.QCoreApplication.translate
         HydroflowDialogBase.setWindowTitle(
             _translate("HydroflowDialogBase", "Hydroflow")

@@ -39,30 +39,25 @@ class Geometry:
 
     def intersection(self, primeiro: Segment, segundo: Segment) -> Optional[Vertex]:
         """
-        Retorna valor booleano, indicando se existe ou não interseção entre
-        os segmentos. Caso exista, o ponto de interseção e passado em "I".
+        Retorna o ponto de interseção, se encontrado entre, os segmentos.
         """
-        # Calculando s e t;
-        denon = (segundo.b.x - segundo.a.x) * (primeiro.b.y - primeiro.a.y) - (
-            segundo.b.y - segundo.a.y
-        ) * (primeiro.b.x - primeiro.a.x)
-        if abs(denon) > self.tolerance:
-            s = (
-                (segundo.b.x - segundo.a.x) * (segundo.a.y - primeiro.a.y)
-                - (segundo.b.y - segundo.a.y) * (segundo.a.x - primeiro.a.x)
-            ) / denon
-            t = (
-                (primeiro.b.x - primeiro.a.x) * (segundo.a.y - primeiro.a.y)
-                - (primeiro.b.y - primeiro.a.y) * (segundo.a.x - primeiro.a.x)
-            ) / denon
+        a = primeiro.a
+        b = primeiro.b
+        c = segundo.a
+        d = segundo.b
 
-            # Verificando se há interseção.
-            if (s > -self.tolerance and s < (1 + self.tolerance)) and (  # pylint: disable=chained-comparison
-                t > -self.tolerance and t < (1 + self.tolerance)  # pylint: disable=chained-comparison
+        # Calculando o determinante.
+        det = (b.x - a.x) * (d.y - c.y) - (d.x - c.x) * (b.y - a.y)
+
+        if abs(det) > self.tolerance:
+            s = ((d.x - c.x) * (c.y - a.y) - (d.y - c.y) * (c.x - a.x)) / det
+            t = ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / det
+
+            if (
+                -self.tolerance < s < 1 + self.tolerance
+                and -self.tolerance < t < 1 + self.tolerance
             ):
-                x = primeiro.a.x + (s * (primeiro.b.x - primeiro.a.x))
-                y = primeiro.a.y + (s * (primeiro.b.y - primeiro.a.y))
-                return Vertex(x=x, y=y)
+                return Vertex(x=a.x + (s * (b.x - a.x)), y=a.y + (s * (b.y - a.y)))
         return None
 
     def calculateRelativePoint(self, x: float, segment: Segment) -> Vertex:

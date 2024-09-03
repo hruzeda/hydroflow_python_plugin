@@ -68,7 +68,7 @@ class Message:
             "----------------------------------------------------"
         )
 
-    def hasMessage(self) -> bool:
+    def hasMessages(self) -> bool:
         return len(self.list) > 0
 
     def retrieveMessage(self, index: int) -> str:

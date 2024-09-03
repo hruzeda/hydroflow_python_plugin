@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Hydroflow</string>
   </property>
+  <property name="windowIcon">
+    <iconset resource="resources.qrc">
+    <normaloff>:hydroflow.ico</normaloff>:hydroflow.ico</iconset>
+  </property>
   <widget class="QPushButton" name="pushButton_Exec">
    <property name="geometry">
     <rect>

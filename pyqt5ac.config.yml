@@ -3,6 +3,9 @@ ioPaths:
     - "hydroflow_dialog_base.ui"
     - "hydroflow_dialog_base_ui.py"
   -
+    - "frmlog.ui"
+    - "frmlog_ui.py"
+  -
     - "resources.qrc"
     - "resources_rc.py"
 
