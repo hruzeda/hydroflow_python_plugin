@@ -15,8 +15,8 @@ __date__ = "12/10/2011"
 __copyright__ = (
     "Copyright 2012, Australia Indonesia Facility for " "Disaster Reduction"
 )
-import unittest
 import os
+import unittest
 
 from qgis.PyQt.QtCore import QCoreApplication, QTranslator
 

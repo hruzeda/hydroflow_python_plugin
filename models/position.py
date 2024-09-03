@@ -18,17 +18,15 @@ class Position:
         if self.list and indice < len(self.list):
             self.list.pop(indice)
 
-    def locate(self, segment: Segment) -> int:
+    def locate(self, scanLine: float, segment: Segment) -> int:
         for i, item in enumerate(self.list):
-            if segment.compareTo(item) == 0:
+            if self.comparePosition(scanLine, segment, item) == 0:
                 return i
         return -1
 
     def comparePosition(
         self, scanLine: float, first: Segment, second: Segment
     ) -> int:
-        result = 0
-
         # Calculando os pontos relativos.
         pFirst = self.geo.calculateRelativePoint(scanLine, first)
         pSecond = self.geo.calculateRelativePoint(scanLine, second)
@@ -40,8 +38,9 @@ class Position:
             if first.isPoint(self.geo.tolerance) or second.isPoint(
                 self.geo.tolerance
             ):
-                result = first.compareTo(second)
-            elif (
+                return first.compareTo(second)
+
+            if (
                 self.geo.equalsTo(pFirst, first.a)
                 and self.geo.equalsTo(first.a, second.b)
             ) or (
@@ -50,14 +49,14 @@ class Position:
             ):
                 # Primeiro entrando ou saindo.
 
-                # Tratando os casos 1 e 2.  TODO rename these params (aX, bX)
-                if self.geo.equalsTo(aX=first.a.y, bX=second.a.y):
+                # Tratando os casos 1 e 2.
+                if self.geo.equalsTo(aPos=first.a.y, bPos=second.a.y):
                     result = self.geo.compareAngles(first, second)
                     if result == 0:
                         # Tratando o caso 1 (segmentos horizontais). Arbitrei!
-                        result = self.geo.compare(first.a.x, second.a.x)
+                        return self.geo.compare(first.a.x, second.a.x)
                 else:
-                    result = self.geo.compare(first.a.y, second.a.y)
+                    return self.geo.compare(first.a.y, second.a.y)
 
             # Testando casos 6 e 7.
             elif (
@@ -77,7 +76,7 @@ class Position:
                     scanLine = second.a.x
 
                 # Comparando os segmentos.
-                result = self.comparePosition(scanLine, first, second)
+                return self.comparePosition(scanLine, first, second)
 
             # Tratando o caso 8.
             elif (
@@ -87,16 +86,15 @@ class Position:
                 and not self.geo.equalsTo(pSecond, second.b)
             ):
                 # Comparando invertido por ser interseção.
-                result = self.geo.compareAngles(second, first)
+                return self.geo.compareAngles(second, first)
 
             # Tratando os casos 4 e 5.
             else:
-                result = self.geo.compareAngles(first, second)
+                return self.geo.compareAngles(first, second)
         else:
             # Alturas relativas diferentes.
-            result = self.geo.compare(pFirst.y, pSecond.y)
-
-        return result
+            return self.geo.compare(pFirst.y, pSecond.y)
+        return 0
 
     def insert(self, segment: Segment) -> int:
         for i, item in enumerate(self.list):

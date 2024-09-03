@@ -10,8 +10,8 @@ class Vertex:
     def equalsTo(self, p: "Vertex") -> bool:
         return self.x == p.x and self.y == p.y
 
-    def withinTolerance(self, p: "Vertex", tolerance: float) -> bool:
-        return abs(self.x - p.x) <= tolerance
+    def withinTolerance(self, otherX: float, tolerance: float) -> bool:
+        return abs(otherX - self.x) <= tolerance
 
     def isExtremity(self) -> bool:
         return self.vertexId == 0 or self.last

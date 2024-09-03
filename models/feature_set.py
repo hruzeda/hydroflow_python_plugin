@@ -1,7 +1,7 @@
 from typing import Optional
 
-from qgis.gui import Qgis
 from qgis.core import QgsVectorLayer
+from qgis.gui import Qgis
 
 from .attribute import Attribute
 from .feature import Feature

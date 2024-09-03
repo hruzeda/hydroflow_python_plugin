@@ -19,8 +19,8 @@ class Geometry:
         self,
         a: Optional[Vertex] = None,
         b: Optional[Vertex] = None,
-        aX: Optional[float] = None,
-        bX: Optional[float] = None,
+        aPos: Optional[float] = None,
+        bPos: Optional[float] = None,
     ) -> bool:
         """
         Aplicação da equação reduzida da circunferência.
@@ -33,8 +33,8 @@ class Geometry:
         """
         if a and b:
             return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) <= self.tolerance
-        if aX and bX:
-            return abs(aX - bX) <= self.tolerance
+        if aPos and bPos:
+            return abs(aPos - bPos) <= self.tolerance
         return False
 
     def intersection(self, primeiro: Segment, segundo: Segment) -> Optional[Vertex]:
@@ -60,37 +60,36 @@ class Geometry:
         return None
 
     def calculateRelativePoint(self, x: float, segment: Segment) -> Vertex:
-        p = None
-        a = segment.a
-        b = segment.b
-
         # o segmento é vertical. Retorna o vértice com o menor "y"!
-        if segment.isVertical(self.tolerance) or abs(x - a.x) <= self.tolerance:
-            p = Vertex(x=a.x, y=a.y)
-        else:  # o segmento não é vertical.
-            if (
-                abs(x - b.x) <= self.tolerance
-            ):  # A linha de varredura "x" intercepta o vértice "b".
-                p = Vertex(x=b.x, y=b.y)
-            else:
-                # Calculando o ponto relativo.
-                # Para a.x < b.x
-                # double dx = b.x - a.x;
-                # double dy = b.y - a.y;
-                # double  t = (x - a.x) / dx;
-                # y = (t * dy) + p.x;
-                # ou
-                # y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
-                y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y
-                p = Vertex(x=x, y=y)
-        return p
+        if segment.isVertical(self.tolerance) or segment.a.withinTolerance(
+            x, self.tolerance
+        ):
+            return Vertex(x=segment.a.x, y=segment.a.y)
+
+        # o segmento não é vertical.
+        if segment.b.withinTolerance(
+            x, self.tolerance
+        ):  # A linha de varredura "x" intercepta o vértice "b".
+            return Vertex(x=segment.b.x, y=segment.b.y)
+
+        # Calculando o ponto relativo.
+        # Para a.x < b.x
+        # double dx = b.x - a.x;
+        # double dy = b.y - a.y;
+        # double  t = (x - a.x) / dx;
+        # y = (t * dy) + p.x;
+        # ou
+        # y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
+        y = (
+            ((x - segment.a.x) / (segment.b.x - segment.a.x))
+            * (segment.b.y - segment.a.y)
+        ) + segment.a.y
+        return Vertex(x=x, y=y)
 
     def compare(self, a: float, b: float) -> int:
         if self.smallerThan(a, b):
             return -1
-        if self.greaterThan(a, b):
-            return 1
-        return 0
+        return 1 if self.greaterThan(a, b) else 0
 
     def compareAngles(self, first: Segment, second: Segment) -> int:
         """
@@ -108,9 +107,7 @@ class Geometry:
 
         if comp < 0:
             return 1
-        if comp > 0:
-            return -1
-        return 0
+        return -1 if comp > 0 else 0
 
     def subtract(self, a: Vertex, b: Vertex) -> Vertex:
         """

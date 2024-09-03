@@ -1,4 +1,5 @@
 from typing import Optional
+
 from .segment import Segment
 from .vertex import Vertex
 

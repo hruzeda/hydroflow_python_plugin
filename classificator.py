@@ -8,8 +8,8 @@ from .models.segment import Segment
 from .models.vertex import Vertex
 from .params import Params
 from .utils.geometry import Geometry
-from .utils.scanner import Scanner, ScanLine
 from .utils.message import Message
+from .utils.scanner import ScanLine, Scanner
 
 
 class Classificator:
@@ -106,7 +106,7 @@ class Classificator:
                     self.evaluateSegments(scanLine.vertex, record, below)
             elif scanLine.eventType == 1:
                 # Localizando o segmento em Posicao.
-                index_A = self.position.locate(record)
+                index_A = self.position.locate(scanLine.vertex.x, record)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
@@ -128,8 +128,12 @@ class Classificator:
                     and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentB.b)
                 ):
                     # Localizando os segmentos.
-                    index_A = self.position.locate(scanLine.segmentA)
-                    index_B = self.position.locate(scanLine.segmentB)
+                    index_A = self.position.locate(
+                        scanLine.vertex.x, scanLine.segmentA
+                    )
+                    index_B = self.position.locate(
+                        scanLine.vertex.x, scanLine.segmentB
+                    )
 
                     # Trocando segmentos de posição .
                     self.position.swap(index_A, index_B)
@@ -188,7 +192,7 @@ class Classificator:
                     )
                 ):
                     # Inserindo a interseção na lista de varredura.
-                    self.scanner.lines.append(
+                    self.scanner.add(
                         ScanLine(
                             vertex=intersectionPoint,
                             segmentA=above,

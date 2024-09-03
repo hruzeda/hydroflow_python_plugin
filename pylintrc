@@ -213,7 +213,7 @@ ignored-argument-names=_.*
 max-locals=27
 
 # Maximum number of return / yield for function / method body
-max-returns=9
+max-returns=10
 
 # Maximum number of branch for function / method body
 max-branches=33
@@ -234,7 +234,7 @@ min-public-methods=0
 max-public-methods=20
 
 # Maximum number of comparisons in an if statement
-max-bool-expr=6
+max-bool-expr=10
 
 # Maximum number of nested blocks for function / method body
 max-nested-blocks=6

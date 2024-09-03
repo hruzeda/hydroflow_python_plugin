@@ -15,9 +15,10 @@ __copyright__ = "Copyright 2012, Australia Indonesia Facility for Disaster Reduc
 
 import os
 import unittest
+
 from qgis.core import (
-    QgsProviderRegistry,
     QgsCoordinateReferenceSystem,
+    QgsProviderRegistry,
     QgsRasterLayer,
 )
 

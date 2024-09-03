@@ -1,7 +1,6 @@
 import functools
 from typing import Optional
 
-
 from ..models.feature import Feature
 from ..models.segment import Segment
 from ..models.vertex import Vertex
@@ -59,7 +58,7 @@ class Scanner:
     def nextInLine(self, previousPoint: Vertex) -> Optional[ScanVertex]:
         result = None
         for i, item in enumerate(self.vertices):
-            if item.vertex.withinTolerance(previousPoint, self.geo.tolerance):
+            if item.vertex.withinTolerance(previousPoint.x, self.geo.tolerance):
                 result = self.vertices.pop(i)
                 break
         return result
@@ -85,8 +84,76 @@ class Scanner:
                     )
                 )
 
+    def add(self, line: ScanLine) -> None:
+        if not self.lines:
+            self.lines.append(line)
+            return
+
+        for i, item in enumerate(self.lines):
+            comp = self.scanLineComparator(line, item)
+
+            if comp == 0:  # item já existe. Nada fazer!
+                return
+
+            if comp < 0:
+                self.lines.insert(i, line)
+                return
+
+        self.lines.append(line)
+
+    def scanLineComparator(self, a: ScanLine, b: ScanLine) -> int:
+        if self.geo.smallerThan(a.vertex.x, b.vertex.x):
+            return -1
+        if self.geo.smallerThan(b.vertex.x, a.vertex.x):
+            return 1
+        if self.geo.equalsTo(aPos=a.vertex.x, bPos=b.vertex.x):
+            if a.eventType == b.eventType:
+                if (
+                    a.segmentA.segmentId == b.segmentA.segmentId
+                    and a.segmentA.featureId == b.segmentA.featureId
+                    and a.segmentA.setId == b.segmentA.setId
+                    and (
+                        (not a.segmentB and not b.segmentB)
+                        or (
+                            a.segmentB
+                            and b.segmentB
+                            and a.segmentB.segmentId == b.segmentB.segmentId
+                            and a.segmentB.featureId == b.segmentB.featureId
+                            and a.segmentB.setId == b.segmentB.setId
+                        )
+                    )
+                ):
+                    return 0
+                if self.geo.smallerThan(a.vertex.y, b.vertex.y):
+                    return -1
+                if self.geo.smallerThan(b.vertex.y, a.vertex.y):
+                    return 1
+                if self.geo.equalsTo(aPos=a.vertex.y, bPos=b.vertex.y):
+                    if self.geo.compareAngles(a.segmentA, b.segmentA) >= 0:
+                        return 1
+                    return -1
+            elif (
+                a.eventType == 0
+                and b.eventType == 1
+                or a.eventType == 0
+                and b.eventType == 2
+                or a.eventType == 2
+                and b.eventType == 1
+            ):
+                return -1
+            elif (
+                a.eventType == 1
+                and b.eventType == 0
+                or a.eventType == 1
+                and b.eventType == 2
+                or a.eventType == 2
+                and b.eventType == 0
+            ):
+                return 1
+        return 0
+
     def scanLineSorter(self, a: ScanLine, b: ScanLine) -> int:
-        if self.geo.equalsTo(aX=a.vertex.x, bX=b.vertex.x):
+        if self.geo.equalsTo(aPos=a.vertex.x, bPos=b.vertex.x):
             # Avaliando o tipo dos eventos
             if a.eventType == 0 and b.eventType == 0:  # São do mesmo tipo: entrada!
                 # Avaliando altura na linha de varredura (y).
@@ -118,7 +185,7 @@ class Scanner:
         if self.geo.equalsTo(a=primeiro, b=segundo):
             return 0
 
-        if self.geo.equalsTo(aX=primeiro.x, bX=segundo.x):
+        if self.geo.equalsTo(aPos=primeiro.x, bPos=segundo.x):
             if self.geo.smallerThan(primeiro.y, segundo.y):
                 return -1
             return 1  # y do primeiro > y do segundo.

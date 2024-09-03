@@ -201,6 +201,12 @@ lint:
 format:
 	@echo
 	@echo "------------------------------------"
+	@echo "Running ruff check isort with --fix"
+	@echo "------------------------------------"
+	ruff check --select I --fix --config pyproject.toml
+
+	@echo
+	@echo "------------------------------------"
 	@echo "Running ruff format command"
 	@echo "------------------------------------"
 	ruff format --config pyproject.toml
