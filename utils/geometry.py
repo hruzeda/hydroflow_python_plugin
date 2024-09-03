@@ -47,16 +47,15 @@ class Geometry:
         d = segundo.b
 
         # Calculando o determinante.
-        det = (b.x - a.x) * (d.y - c.y) - (d.x - c.x) * (b.y - a.y)
+        det = (d.x - c.x) * (b.y - a.y) - (d.y - c.y) * (b.x - a.x)
 
         if abs(det) > self.tolerance:
             s = ((d.x - c.x) * (c.y - a.y) - (d.y - c.y) * (c.x - a.x)) / det
             t = ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / det
 
-            if (
-                -self.tolerance < s < 1 + self.tolerance
-                and -self.tolerance < t < 1 + self.tolerance
-            ):
+            if self.tolerance * -1 < s < (
+                1 + self.tolerance
+            ) and self.tolerance * -1 < t < (1 + self.tolerance):
                 return Vertex(x=a.x + (s * (b.x - a.x)), y=a.y + (s * (b.y - a.y)))
         return None
 
