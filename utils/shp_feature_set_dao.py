@@ -304,15 +304,15 @@ class SHPFeatureSetDAO:
         newLayer = QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
 
         # Gravando os registros já existentes no shapefile original.
-        for feature in featureSet.featuresList:
-            self.copyFeature(
-                feature,
-                newLayer,
-                fields,
-                params.strahlerOrderType,
-                params.shreveOrderEnabled,
-                None,
-            )
+        # for feature in featureSet.featuresList:
+        #     self.copyFeature(
+        #         feature,
+        #         newLayer,
+        #         fields,
+        #         params.strahlerOrderType,
+        #         params.shreveOrderEnabled,
+        #         None,
+        #     )
 
         # Gravando os novos registros criados.
         for feature in featureSet.newFeaturesList:
