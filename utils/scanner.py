@@ -212,20 +212,20 @@ class Scanner:
             # Avaliando o tipo dos eventos
             if a.eventType == 0 and b.eventType == 0:  # São do mesmo tipo: entrada!
                 # Avaliando altura na linha de varredura (y).
-                return 1 if self.geo.smallerThan(b.vertex.y, a.vertex.y) else -1
+                return -1 if self.geo.smallerThan(a.vertex.y, b.vertex.y) else 1
             if a.eventType == 1 and b.eventType == 1:  # São do mesmo tipo: saída!
                 xA = a.segmentA.getSmallerX(self.geo.tolerance)
                 xB = b.segmentA.getSmallerX(self.geo.tolerance)
                 return (
-                    1 if self.geo.smallerThan(xB, xA) else -1
+                    -1 if self.geo.smallerThan(xA, xB) else 1
                 )  # Entra depois, sai depois!
 
-            return 1 if a.eventType == b.eventType else -1
+            return -1 if a.eventType == b.eventType else 1
 
-        return 1 if self.geo.smallerThan(b.vertex.x, a.vertex.x) else -1
+        return -1 if self.geo.smallerThan(a.vertex.x, b.vertex.x) else 1
 
     def sortLines(self) -> None:
-        self.lines.sort(key=functools.cmp_to_key(self.scanLineSorter))
+        self.lines.sort(key=functools.cmp_to_key(self.scanLineSorter), reverse=True)
 
     def createScanPoint(
         self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None

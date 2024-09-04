@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from PyQt5.QtCore import QVariant
 from qgis.core import (
@@ -13,7 +13,6 @@ from qgis.core import (
     QgsProject,
     QgsVectorFileWriter,
     QgsVectorLayer,
-    QgsWkbTypes,
 )
 
 from ..models.attribute import Attribute
@@ -226,43 +225,28 @@ class SHPFeatureSetDAO:
 
         return attributes
 
-    def createFeatureSet(self, fileName: str, geometryType: QgsWkbTypes) -> bool:
-        # Define the geometry type
-        geometry_type_map = {
-            QgsWkbTypes.PointGeometry: "Point",
-            QgsWkbTypes.LineGeometry: "LineString",
-            QgsWkbTypes.PolygonGeometry: "Polygon",
-        }
-
-        geometryType = geometry_type_map.get(geometryType, None)
-        if not geometryType:
-            return False
-
+    def createFeatureSet(
+        self, newFileName: str, originalLayer: QgsVectorLayer, fields: QgsFields
+    ) -> bool:
         # Create an empty SHP file with the specified geometry type
-        writer = QgsVectorFileWriter(
-            fileName, "UTF-8", QgsFields(), geometryType, None, "ESRI Shapefile"
+        writer = QgsVectorFileWriter.create(
+            newFileName,
+            fields,
+            originalLayer.wkbType(),
+            originalLayer.sourceCrs(),
+            originalLayer.transformContext(),
+            QgsVectorFileWriter.SaveVectorOptions(),
         )
 
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print(f"Error when creating SHP file: {writer.hasError()}")
             return False
-
-        del writer  # Close the file and release resources
         return True
 
-    def createNewTable(
-        self,
-        fileName: str,
-        originalDbfTable: Any,
-        params: Params,
-        has_observation: bool,
-    ) -> bool:
-        # Create a new SHP file (which includes a DBF table)
-        fields = QgsFields()
-
-        # Add fields from the original DBF table
-        for field in originalDbfTable.fields():
-            fields.append(field)
+    def getFields(
+        self, originalLayer: QgsVectorLayer, params: Params, hasObservation: bool
+    ) -> QgsFields:
+        fields = QgsFields(originalLayer.fields())
 
         if params.strahlerOrderType > 0:
             fields.append(QgsField("Strahler", QVariant.Int))
@@ -270,57 +254,24 @@ class SHPFeatureSetDAO:
         if params.shreveOrderEnabled:
             fields.append(QgsField("Shreve", QVariant.Int))
 
-        # Adding custom fields based on conditions
-        fluxo_field_name = "Fluxo"
-        if has_observation:
+        if hasObservation:
             obs_field_name = "Obs:"
             fields.append(QgsField(obs_field_name, QVariant.String, len=80))
 
-        # Add the new fields
-        fields.append(QgsField(fluxo_field_name, QVariant.Int))
+        fields.append(QgsField("Fluxo", QVariant.Int))
+        return fields
 
-        # Create the SHP file with the new fields
-        writer = QgsVectorFileWriter(
-            fileName,
-            "UTF-8",
-            fields,
-            QgsWkbTypes.PolygonGeometry,
-            None,
-            "ESRI Shapefile",
-        )
-
-        if writer.hasError() != QgsVectorFileWriter.NoError:
-            print(f"Error creating SHP file with new fields: {writer.hasError()}")
-            return False
-
-        # Copy the records from the original table
-        for feature in originalDbfTable.getFeatures():
-            new_feature = QgsFeature(writer.fields())
-
-            # Copy the geometry from the original feature
-            new_feature.setGeometry(feature.geometry())
-
-            # Copy the attribute values
-            for i, field in enumerate(originalDbfTable.fields()):
-                new_feature.setAttribute(i, feature[i])
-
-            # Add the new feature to the writer
-            writer.addFeature(new_feature)
-
-        del writer  # Close the file and release resources
-        return True
-
-    def saveRecord(
+    def copyFeature(
         self,
         origFeature: Feature,
-        origLayer: QgsVectorLayer,
         newLayer: QgsVectorLayer,
+        fields: QgsFields,
         strahler: int,
         shreve: bool,
         attributes: Optional[list[Attribute]],
     ) -> None:
         # Create a new feature
-        feature = QgsFeature(origLayer.fields())
+        feature = QgsFeature(fields, origFeature.featureId)
 
         # Set the geometry of the feature
         geometry = QgsGeometry.fromPolylineXY(
@@ -348,15 +299,16 @@ class SHPFeatureSetDAO:
         newLayer.updateExtents()
 
     def saveFeatureSet(self, featureSet: FeatureSet, params: Params) -> None:
-        self.createFeatureSet(params.newFileName, QgsWkbTypes.PolygonGeometry)
-        shp_layer = QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
+        fields = self.getFields(featureSet.raw, params, len(featureSet.obs.list) > 0)
+        self.createFeatureSet(params.newFileName, featureSet.raw, fields)
+        newLayer = QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
 
         # Gravando os registros já existentes no shapefile original.
         for feature in featureSet.featuresList:
-            self.saveRecord(
+            self.copyFeature(
                 feature,
-                featureSet.raw,
-                shp_layer,
+                newLayer,
+                fields,
                 params.strahlerOrderType,
                 params.shreveOrderEnabled,
                 None,
@@ -364,21 +316,21 @@ class SHPFeatureSetDAO:
 
         # Gravando os novos registros criados.
         for feature in featureSet.newFeaturesList:
-            self.saveRecord(
+            self.copyFeature(
                 feature,
-                featureSet.raw,
-                shp_layer,
+                newLayer,
+                fields,
                 params.strahlerOrderType,
                 params.shreveOrderEnabled,
                 featureSet.getNewFeatureAttributes(feature.featureId),
             )
 
-        shp_layer.updateExtents()
+        newLayer.updateExtents()
 
         # Copiando os arquivos de configuração.
         self.copyConfigFiles(params.drainageFileName, params.newFileName)
 
-        QgsProject.instance().addMapLayer(shp_layer)
+        QgsProject.instance().addMapLayer(newLayer)
 
     def copyConfigFiles(self, fileName: str, newFileName: str) -> None:
         original_path = Path(fileName).parent
@@ -398,3 +350,9 @@ class SHPFeatureSetDAO:
         new_xml_file = new_path / f"{Path(newFileName).name}.xml"
         if xml_file.exists():
             shutil.copyfile(xml_file, new_xml_file)
+
+        # Copy .shx file
+        shx_file = original_path / f"{base}.shx"
+        new_shx_file = new_path / f"{new_base}.shx"
+        if shx_file.exists():
+            shutil.copyfile(shx_file, new_shx_file)

@@ -1,7 +1,5 @@
 import functools
 
-from qgis.core import Qgis, QgsMessageLog
-
 from ..utils.message import Message
 from .segment import Segment
 
@@ -98,15 +96,6 @@ class Relation:
         1 - Toca
         2 - Intercepta
         """
-        QgsMessageLog.logMessage(
-            (
-                f"Adicionando relação entre FID {source.featureId} "
-                f"e FID {destination.featureId} do tipo {relationType}."
-            ),
-            "HydroFlow.Relation",
-            Qgis.MessageLevel.Info,
-        )
-
         # Garantindo que o FID do primeiro segmento seja menor que o FID do segundo.
         if destination.featureId < source.featureId:
             source, destination = destination, source
@@ -114,9 +103,6 @@ class Relation:
         # Verificando se é relação entre foz e limite.
         # Só aceita relação topológica do tipo encosta entre foz e limite da bacia!
         if source.setId != destination.setId and relationType == 0:
-            QgsMessageLog.logMessage(
-                "FOZ!", "HydroFlow.Relation", Qgis.MessageLevel.Info
-            )
             self.addMouth(source, destination)  # Versão 1.3!
 
         # Verificando se os segmenos são de feições diferentes da bacia.
@@ -142,20 +128,14 @@ class Relation:
     def findChildSegments(
         self, featureId: int, parentFeatureId: int, siblings: list[Segment]
     ) -> list[Segment]:
-        result = []
+        result = set()
 
         # Obtendo o índice primário.
         primaryIndex = self.findPrimaryIndex(featureId)
-        if primaryIndex >= 0:
-            reached_end = False
-            isChild = False
-            primaryItem = None
-            eventItem = None
-            relatedSegment = None
-            childSegment = None
-            indexSize = len(self.index)
 
-            while not reached_end and primaryIndex < indexSize:
+        if primaryIndex >= 0:
+            done = False
+            while not done and primaryIndex < len(self.index):
                 # Obtendo o índice do evento.
                 primaryItem = self.index[primaryIndex]
 
@@ -163,6 +143,7 @@ class Relation:
                     # Lendo evento.
                     eventItem = self.items[primaryItem.value]
 
+                    relatedSegment = None
                     if (
                         eventItem.source.featureId == featureId
                         and eventItem.destination.featureId != parentFeatureId
@@ -180,13 +161,13 @@ class Relation:
                             if relatedSegment.featureId == childSegment.featureId:
                                 isChild = False
                         if isChild:
-                            result.append(relatedSegment)
+                            result.add(relatedSegment)
 
                     primaryIndex += 1
                 else:
-                    reached_end = True
+                    done = True
 
-        return result
+        return list(result)
 
     def comparePosition(self, a: RelationItem, b: RelationItem) -> int:
         if (

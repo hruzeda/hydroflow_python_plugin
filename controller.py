@@ -91,7 +91,7 @@ class Controller:
                 "Salvar bacia classificada como",
                 "",
                 "Shape File(*.shp)",
-            )
+            )[0]
             if new != "":
                 params.origin.setCursor(Qt.WaitCursor)
                 params.newFileName = new

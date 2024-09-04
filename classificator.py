@@ -83,7 +83,7 @@ class Classificator:
         while scanLine is not None:
             record = scanLine.segmentA
 
-            if previousPoint.x != scanLine.vertex.x:
+            if self.geo.smallerThan(previousPoint.x, scanLine.vertex.x):
                 self.processScanPoints(previousPoint)
                 previousPoint = scanLine.vertex
 
@@ -346,9 +346,10 @@ class Classificator:
                             node.flow = 1  # Manter!
 
                 # Obtendo os filhos.
-                parentID = -1 if parent.setId == 1 else parent.featureId
                 childSegments = self.topologicalRelations.findChildSegments(
-                    segment.featureId, parentID, sibling_nodes
+                    segment.featureId,
+                    -1 if parent.setId == 1 else parent.featureId,
+                    sibling_nodes,
                 )
 
                 # Classificando o nó.
