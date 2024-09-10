@@ -8,8 +8,6 @@ from qgis.core import (
     QgsFeatureRequest,
     QgsField,
     QgsFields,
-    QgsGeometry,
-    QgsPointXY,
     QgsProject,
     QgsVectorFileWriter,
     QgsVectorLayer,
@@ -23,6 +21,7 @@ from ..models.observation import Observation
 from ..models.segment import Segment
 from ..models.vertex import Vertex
 from ..params import Params
+from ..utils.message import Message
 
 
 class SHPFeatureSetDAO:
@@ -226,8 +225,16 @@ class SHPFeatureSetDAO:
         return attributes
 
     def createFeatureSet(
-        self, newFileName: str, originalLayer: QgsVectorLayer, fields: QgsFields
-    ) -> bool:
+        self,
+        newFileName: str,
+        originalLayer: QgsVectorLayer,
+        fields: QgsFields,
+        log: Message,
+    ) -> Optional[QgsVectorFileWriter]:
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = "ESRI Shapefile"
+        options.fileEncoding = "UTF-8"
+
         # Create an empty SHP file with the specified geometry type
         writer = QgsVectorFileWriter.create(
             newFileName,
@@ -235,13 +242,15 @@ class SHPFeatureSetDAO:
             originalLayer.wkbType(),
             originalLayer.sourceCrs(),
             originalLayer.transformContext(),
-            QgsVectorFileWriter.SaveVectorOptions(),
+            options,
         )
 
-        if writer.hasError() != QgsVectorFileWriter.NoError:
-            print(f"Error when creating SHP file: {writer.hasError()}")
-            return False
-        return True
+        result = True
+        if not writer or writer.hasError() != QgsVectorFileWriter.NoError:
+            log.append(f"Error when creating SHP file: {writer.errorMessage()}")
+            result = False
+
+        return writer if result else None
 
     def getFields(
         self, originalLayer: QgsVectorLayer, params: Params, hasObservation: bool
@@ -264,7 +273,8 @@ class SHPFeatureSetDAO:
     def copyFeature(
         self,
         origFeature: Feature,
-        newLayer: QgsVectorLayer,
+        rawFeature: QgsFeature,
+        writer: QgsVectorFileWriter,
         fields: QgsFields,
         strahler: int,
         shreve: bool,
@@ -274,15 +284,15 @@ class SHPFeatureSetDAO:
         feature = QgsFeature(fields, origFeature.featureId)
 
         # Set the geometry of the feature
-        geometry = QgsGeometry.fromPolylineXY(
-            [QgsPointXY(v.x, v.y) for v in origFeature.vertexList]
-        )
-        feature.setGeometry(geometry)
+        feature.setGeometry(rawFeature.geometry())
 
         # Set the attributes
         if attributes and len(attributes) > 0:
             for i, attr in enumerate(attributes):
                 feature.setAttribute(i, attr.attr_value)
+        else:
+            for i, attribute in enumerate(rawFeature.attributes()):
+                feature.setAttribute(i, attribute)
 
         # Set the fluxo attribute
         feature.setAttribute("Fluxo", origFeature.flow)
@@ -294,43 +304,49 @@ class SHPFeatureSetDAO:
         if shreve:
             feature.setAttribute("Shreve", origFeature.shreve)
 
-        # Add the feature to the layer
-        newLayer.dataProvider().addFeature(feature)
-        newLayer.updateExtents()
+        writer.addFeature(feature)
 
-    def saveFeatureSet(self, featureSet: FeatureSet, params: Params) -> None:
+    def saveFeatureSet(
+        self, featureSet: FeatureSet, params: Params, log: Message
+    ) -> None:
         fields = self.getFields(featureSet.raw, params, len(featureSet.obs.list) > 0)
-        self.createFeatureSet(params.newFileName, featureSet.raw, fields)
-        newLayer = QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
+
+        writer = self.createFeatureSet(
+            params.newFileName, featureSet.raw, fields, log
+        )
 
         # Gravando os registros já existentes no shapefile original.
-        # for feature in featureSet.featuresList:
-        #     self.copyFeature(
-        #         feature,
-        #         newLayer,
-        #         fields,
-        #         params.strahlerOrderType,
-        #         params.shreveOrderEnabled,
-        #         None,
-        #     )
+        for feature in featureSet.featuresList:
+            self.copyFeature(
+                feature,
+                featureSet.raw.getFeature(feature.featureId),
+                writer,
+                fields,
+                params.strahlerOrderType,
+                params.shreveOrderEnabled,
+                None,
+            )
 
         # Gravando os novos registros criados.
         for feature in featureSet.newFeaturesList:
             self.copyFeature(
                 feature,
-                newLayer,
+                featureSet.raw.getFeature(feature.featureId),
+                writer,
                 fields,
                 params.strahlerOrderType,
                 params.shreveOrderEnabled,
                 featureSet.getNewFeatureAttributes(feature.featureId),
             )
 
-        newLayer.updateExtents()
+        del writer
 
         # Copiando os arquivos de configuração.
         self.copyConfigFiles(params.drainageFileName, params.newFileName)
 
-        QgsProject.instance().addMapLayer(newLayer)
+        QgsProject.instance().addMapLayer(
+            QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
+        )
 
     def copyConfigFiles(self, fileName: str, newFileName: str) -> None:
         original_path = Path(fileName).parent
@@ -339,20 +355,8 @@ class SHPFeatureSetDAO:
         base = Path(fileName).stem
         new_base = Path(newFileName).stem
 
-        # Copy .prj file
-        prj_file = original_path / f"{base}.prj"
-        new_prj_file = new_path / f"{new_base}.prj"
-        if prj_file.exists():
-            shutil.copyfile(prj_file, new_prj_file)
-
-        # Copy .xml file
-        xml_file = original_path / f"{Path(fileName).name}.xml"
-        new_xml_file = new_path / f"{Path(newFileName).name}.xml"
-        if xml_file.exists():
-            shutil.copyfile(xml_file, new_xml_file)
-
-        # Copy .shx file
-        shx_file = original_path / f"{base}.shx"
-        new_shx_file = new_path / f"{new_base}.shx"
-        if shx_file.exists():
-            shutil.copyfile(shx_file, new_shx_file)
+        # Copy any file with the same name and different extension
+        for ext in [".cpg", ".prj", ".shx", ".qix", ".shp.xml"]:
+            file = original_path / (base + ext)
+            if file.exists():
+                shutil.copy(file, new_path / (new_base + ext))

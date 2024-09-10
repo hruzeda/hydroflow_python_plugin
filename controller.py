@@ -98,8 +98,10 @@ class Controller:
                 log.result = new
 
                 # Gravando os arquivos.
-                dao.saveFeatureSet(drainage, params)
+                dao.saveFeatureSet(drainage, params, log)
+
                 params.origin.setCursor(Qt.ArrowCursor)
+
             result = 0
         else:
             result = 9
