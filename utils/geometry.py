@@ -80,9 +80,14 @@ class Geometry:
         # y = (t * dy) + p.x;
         # ou
         # y = (((x - a.x) / (b.x - a.x)) * (b.y - a.y)) + a.y;
+        segmentDeltaX = segment.b.x - segment.a.x
+        segmentDeltaY = segment.b.y - segment.a.y
         y = (
-            ((x - segment.a.x) / (segment.b.x - segment.a.x))
-            * (segment.b.y - segment.a.y)
+            (
+                (x - segment.a.x)
+                / (segmentDeltaX if segmentDeltaX != 0 else self.tolerance)
+            )
+            * (segmentDeltaY if segmentDeltaY != 0 else self.tolerance)
         ) + segment.a.y
         return Vertex(x=x, y=y)
 

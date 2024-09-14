@@ -49,7 +49,7 @@ PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=
+QGISDIR=C:/Users/henrique/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
 
 #################################################
 # Normally you would not need to edit below here
@@ -108,35 +108,12 @@ deploy: compile
 	cp -vf $(EXTRAS) $(QGISDIR)/$(PLUGINNAME)
 	cp -rvf ${EXTRA_DIRS} $(QGISDIR)/$(PLUGINNAME)
 
-# The dclean target removes compiled python files from plugin directory
-# also deletes any .git entry
-dclean:
-	@echo
-	@echo "-----------------------------------"
-	@echo "Removing any compiled python files."
-	@echo "-----------------------------------"
-	rm -rf "**\__pycache__"
-	rm -rf "**\.pyc"
-
-
 derase:
 	@echo
 	@echo "-------------------------"
 	@echo "Removing deployed plugin."
 	@echo "-------------------------"
 	rm -Rf $(QGISDIR)/$(PLUGINNAME)
-
-zip: dclean package
-	@echo
-	@if [ -n "$(VERSION)" ]; then \
-		echo "---------------------------"; \
-		echo "Creating plugin zip bundle."; \
-		echo "---------------------------"; \
-		echo "The zip target deploys the plugin and creates a zip file with the deployed"; \
-		echo "content. You can then upload the zip file on http://plugins.qgis.org"; \
-		rm -f $(PLUGINNAME)-$(VERSION).zip; \
-		cd $(QGISDIR); zip -9r $(CURDIR)/$(PLUGINNAME)-$(VERSION).zip $(PLUGINNAME); \
-	fi
 
 package: compile
 	@echo
@@ -145,7 +122,7 @@ package: compile
 	@echo "------------------------------------"
 	@if [ -n "$(VERSION)" ]; then \
 		rm -f $(PLUGINNAME)-$(VERSION).zip; \
-		git archive --format zip --prefix "$(PLUGINNAME)/" -o $(PLUGINNAME)-$(VERSION).zip; \
+		git archive --format=zip --prefix=$(PLUGINNAME)/ HEAD > $(PLUGINNAME)-$(VERSION).zip; \
 		echo "Created package: $(PLUGINNAME)-$(VERSION).zip"; \
 	else \
 		echo "Create a zip package of the plugin named $(PLUGINNAME)-$(VERSION).zip."; \
