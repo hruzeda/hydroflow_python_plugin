@@ -24,11 +24,11 @@
 
 LOCALES =
 
-SOURCES = __init__.py classificator.py controller.py frmlog_ui.py frmlog.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py models/__init__.py models/attribute.py models/feature_set.py models/feature.py models/new_feature_attribute.py models/node.py models/observation.py models/position.py models/relation.py models/segment.py models/vertex.py utils/__init__.py utils/geometry.py utils/iterator.py utils/message.py utils/shp_feature_set_dao.py
+SOURCES = __init__.py classificator.py controller.py monitorpoint.py frmlog_ui.py frmlog.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py models/__init__.py models/attribute.py models/feature_set.py models/feature.py models/new_feature_attribute.py models/node.py models/observation.py models/position.py models/relation.py models/segment.py models/vertex.py utils/__init__.py utils/geometry.py utils/iterator.py utils/message.py utils/shp_feature_set_dao.py
 
 PLUGINNAME = hydroflow
 
-PY_FILES = __init__.py classificator.py controller.py frmlog_ui.py frmlog.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py
+PY_FILES = __init__.py classificator.py controller.py monitorpoint.py frmlog_ui.py frmlog.py hydroflow_dialog_base_ui.py hydroflow_dialog.py hydroflow.py params.py plugin_upload.py resources_rc.py
 
 UI_FILES = frmlog.ui hydroflow_dialog_base.ui
 
@@ -49,7 +49,7 @@ PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=C:/Users/henrique/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
+QGISDIR=
 
 #################################################
 # Normally you would not need to edit below here
@@ -122,7 +122,7 @@ package: compile
 	@echo "------------------------------------"
 	@if [ -n "$(VERSION)" ]; then \
 		rm -f $(PLUGINNAME)-$(VERSION).zip; \
-		git archive --format=zip --prefix=$(PLUGINNAME)/ HEAD > $(PLUGINNAME)-$(VERSION).zip; \
+		cd $(QGISDIR); zip -v -r $(CURDIR)/$(PLUGINNAME)-$(VERSION).zip $(PLUGINNAME); \
 		echo "Created package: $(PLUGINNAME)-$(VERSION).zip"; \
 	else \
 		echo "Create a zip package of the plugin named $(PLUGINNAME)-$(VERSION).zip."; \

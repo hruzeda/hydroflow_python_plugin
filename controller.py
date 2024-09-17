@@ -100,6 +100,17 @@ class Controller:
                 # Gravando os arquivos.
                 dao.saveFeatureSet(drainage, params, log)
 
+                topology_log = open(new.replace(".shp", "_topo.txt"), "w")
+                for relation in classificator.topologicalRelations.mouths:
+                    topology_log.write(
+                        f"{relation.source.featureId};{relation.destination.featureId}\n"
+                    )
+                for relation in classificator.topologicalRelations.items:
+                    topology_log.write(
+                        f"{relation.source.featureId};{relation.destination.featureId}\n"
+                    )
+                topology_log.close()
+
                 params.origin.setCursor(Qt.ArrowCursor)
 
             result = 0
