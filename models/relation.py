@@ -33,13 +33,6 @@ class Relation:
         self.index: list[IndexItem] = []
         self.primaryIndex: list[IndexItem] = []
 
-    # def cleanup(self) -> None:
-    #     self.items.clear()
-    #     self.err.clear()
-    #     self.mouths.clear()
-    #     self.index.clear()
-    #     self.primaryIndex.clear()
-
     def insert(
         self,
         source: Segment,

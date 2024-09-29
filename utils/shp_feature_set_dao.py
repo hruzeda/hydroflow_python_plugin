@@ -48,13 +48,20 @@ class SHPFeatureSetDAO:
 
         # Montando as feições
         newFeatureId = layer.featureCount()
-        for featureId, feature in enumerate(layer.getFeatures()):
-            geometry = feature.geometry()
+        for featureId, qgsFeature in enumerate(layer.getFeatures()):
+            geometry = qgsFeature.geometry()
             if geometry.isMultipart():
                 # Lendo as partes.
                 vertexId = 0
                 partsIterator = geometry.parts()
                 for partId, part in enumerate(partsIterator):
+                    newFeature = partId > 0
+                    feature = Feature(
+                        featureId=newFeatureId if newFeature else featureId,
+                        setId=shapeType or -1,
+                        featureType=geometry.wkbType(),
+                    )
+
                     # Lendo os vértices da parte
                     vertexList: list[Vertex] = []
                     verticesIterator = part.vertices()
@@ -79,7 +86,7 @@ class SHPFeatureSetDAO:
                             segmentsList.append(
                                 Segment(
                                     segmentId=len(segmentsList),
-                                    featureId=featureId,
+                                    featureId=feature.featureId,
                                     setId=shapeType,
                                     a=vertexA,
                                     b=vertexB,
@@ -89,7 +96,7 @@ class SHPFeatureSetDAO:
                             segmentsList.append(
                                 Segment(
                                     segmentId=len(segmentsList),
-                                    featureId=featureId,
+                                    featureId=feature.featureId,
                                     setId=shapeType,
                                     a=vertexB,
                                     b=vertexA,
@@ -100,7 +107,7 @@ class SHPFeatureSetDAO:
                                 segmentsList.append(  # NOSONAR
                                     Segment(
                                         segmentId=len(segmentsList),
-                                        featureId=featureId,
+                                        featureId=feature.featureId,
                                         setId=shapeType,
                                         a=vertexA,
                                         b=vertexB,
@@ -110,82 +117,77 @@ class SHPFeatureSetDAO:
                                 segmentsList.append(  # NOSONAR
                                     Segment(
                                         segmentId=len(segmentsList),
-                                        featureId=featureId,
+                                        featureId=feature.featureId,
                                         setId=shapeType,
                                         a=vertexB,
                                         b=vertexA,
                                     )
                                 )
 
-                    if partId == 0:  # Feição original.
-                        featureObject = Feature(
-                            featureId=featureId,
-                            setId=shapeType or -1,
-                            featureType=geometry.wkbType(),
-                            vertexList=vertexList,
-                            segmentsList=segmentsList,
-                        )
+                    feature.vertexList = vertexList
+                    feature.segmentsList = segmentsList
+
+                    if not newFeature:  # Feição original.
                         if partsIterator.hasNext():
-                            featureObject.hasObservation = True
+                            feature.hasObservation = True
                             obs.set_value(featureId, msg_1)
 
-                        featureSet.featuresList.append(featureObject)
+                        featureSet.featuresList.append(feature)
                     else:  # Adicionar novo registro no ShapeFile.
-                        featureObject = Feature(
-                            featureId=newFeatureId,
-                            setId=shapeType or -1,
-                            featureType=geometry.wkbType(),
-                            vertexList=vertexList,
-                            segmentsList=segmentsList,
-                        )
-                        featureObject.hasObservation = True
+                        feature.hasObservation = True
                         obs.set_value(partId, msg_2 + str(featureId) + ".")
 
-                        featureSet.newFeaturesList.append(featureObject)
+                        featureSet.newFeaturesList.append(feature)
                         featureSet.newFeaturesAttributes.append(
                             NewFeatureAttributes(
                                 featureId=newFeatureId,
-                                attributes=self.readAttributes(layer, feature.id()),
+                                attributes=self.readAttributes(
+                                    layer, qgsFeature.id()
+                                ),
                             )
                         )
                         newFeatureId += 1
 
             else:
-                vertexList = [
-                    Vertex(x=point.x(), y=point.y())
-                    for point in geometry.asPolyline()
-                ]
+                vertexList = (
+                    [
+                        Vertex(x=point.x(), y=point.y())
+                        for point in geometry.asPolyline()
+                    ]
+                    if not geometry.isNull()
+                    else []
+                )
                 if len(vertexList) == 1:
-                    featureObject = Feature(
-                        featureId=feature.id(),
+                    feature = Feature(
+                        featureId=qgsFeature.id(),
                         setId=shapeType or -1,
                         featureType=geometry.wkbType(),
                         vertexList=vertexList,
-                        segmentsList=[
-                            Segment(  # Montando um segmento degenerado!
-                                segmentId=0,
-                                featureId=featureId,
-                                setId=shapeType,
-                                a=vertexList[0],
-                                b=vertexList[0],
-                            )
-                        ],
                     )
+                    feature.segmentsList = [
+                        Segment(  # Montando um segmento degenerado!
+                            segmentId=0,
+                            featureId=feature.featureId,
+                            setId=shapeType,
+                            a=vertexList[0],
+                            b=vertexList[0],
+                        )
+                    ]
                     if shapeType == 0:  # É bacia. Não processar o elemento!
-                        featureObject.process = False
-                        featureObject.hasObservation = True
-                        obs.set_value(feature.id(), msg_3)
+                        feature.process = False
+                        feature.hasObservation = True
+                        obs.set_value(qgsFeature.id(), msg_3)
                 else:  # Não tem vertices! Situação de erro do ShapeFile.
-                    featureObject = Feature(
-                        featureId=feature.id(),
+                    feature = Feature(
+                        featureId=qgsFeature.id(),
                         setId=shapeType or -1,
                         featureType=geometry.wkbType(),
                         vertexList=vertexList,
                     )
-                    featureObject.process = False
-                    featureObject.hasObservation = True
-                    obs.set_value(feature.id(), msg_3)
-                featureSet.featuresList.append(featureObject)
+                    feature.process = False
+                    feature.hasObservation = True
+                    obs.set_value(qgsFeature.id(), msg_3)
+                featureSet.featuresList.append(feature)
 
         # Cadastrando demais atributos da figura.
         featureSet.obs = obs
@@ -232,6 +234,9 @@ class SHPFeatureSetDAO:
         log: Message,
     ) -> Optional[QgsVectorFileWriter]:
         options = QgsVectorFileWriter.SaveVectorOptions()
+        options.actionOnExistingFile = (
+            QgsVectorFileWriter.ActionOnExistingFile.CreateOrOverwriteFile
+        )
         options.driverName = "ESRI Shapefile"
         options.fileEncoding = "UTF-8"
 
@@ -245,12 +250,10 @@ class SHPFeatureSetDAO:
             options,
         )
 
-        result = True
         if not writer or writer.hasError() != QgsVectorFileWriter.NoError:
             log.append(f"Error when creating SHP file: {writer.errorMessage()}")
-            result = False
-
-        return writer if result else None
+            return None
+        return writer
 
     def getFields(
         self, originalLayer: QgsVectorLayer, params: Params, hasObservation: bool
@@ -263,6 +266,8 @@ class SHPFeatureSetDAO:
         if params.shreveOrderEnabled:
             fields.append(QgsField("Shreve", QVariant.Int))
 
+        fields.append(QgsField("MonitorPointOrder", QVariant.Int))
+
         if hasObservation:
             obs_field_name = "Obs:"
             fields.append(QgsField(obs_field_name, QVariant.String, len=80))
@@ -272,8 +277,8 @@ class SHPFeatureSetDAO:
 
     def copyFeature(
         self,
-        origFeature: Feature,
-        rawFeature: QgsFeature,
+        feature: Feature,
+        qgsFeature: QgsFeature,
         writer: QgsVectorFileWriter,
         fields: QgsFields,
         strahler: int,
@@ -281,30 +286,30 @@ class SHPFeatureSetDAO:
         attributes: Optional[list[Attribute]],
     ) -> None:
         # Create a new feature
-        feature = QgsFeature(fields, origFeature.featureId)
+        copy = QgsFeature(fields, feature.featureId)
 
         # Set the geometry of the feature
-        feature.setGeometry(rawFeature.geometry())
+        copy.setGeometry(qgsFeature.geometry())
 
         # Set the attributes
         if attributes and len(attributes) > 0:
             for i, attr in enumerate(attributes):
-                feature.setAttribute(i, attr.attr_value)
+                copy.setAttribute(i, attr.attr_value)
         else:
-            for i, attribute in enumerate(rawFeature.attributes()):
-                feature.setAttribute(i, attribute)
+            for i, attribute in enumerate(qgsFeature.attributes()):
+                copy.setAttribute(i, attribute)
 
         # Set the fluxo attribute
-        feature.setAttribute("Fluxo", origFeature.flow)
+        copy.setAttribute("Fluxo", feature.flow)
 
         # Set additional attributes like Strahler and Shreve
         if strahler > 0:
-            feature.setAttribute("Strahler", origFeature.strahler)
+            copy.setAttribute("Strahler", feature.strahler)
 
         if shreve:
-            feature.setAttribute("Shreve", origFeature.shreve)
+            copy.setAttribute("Shreve", feature.shreve)
 
-        writer.addFeature(feature)
+        writer.addFeature(copy)
 
     def saveFeatureSet(
         self, featureSet: FeatureSet, params: Params, log: Message
@@ -314,6 +319,8 @@ class SHPFeatureSetDAO:
         writer = self.createFeatureSet(
             params.newFileName, featureSet.raw, fields, log
         )
+        if not writer:
+            return
 
         # Gravando os registros já existentes no shapefile original.
         for feature in featureSet.featuresList:
