@@ -10,6 +10,8 @@ class Params:
         toleranceXY: float = 0,
         strahlerOrderType: int = 0,
         shreveOrderEnabled: bool = False,
+        monitorPointEnabled: bool = False,
+        monitorPointN: int = 5,
     ) -> None:
         self.origin = origin
         self.drainageFileName = drainageFileName
@@ -18,3 +20,5 @@ class Params:
         self.toleranceXY = toleranceXY
         self.strahlerOrderType = strahlerOrderType
         self.shreveOrderEnabled = shreveOrderEnabled
+        self.monitorPointEnabled = monitorPointEnabled
+        self.monitorPointN = monitorPointN

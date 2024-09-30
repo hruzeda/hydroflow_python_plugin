@@ -266,7 +266,7 @@ class SHPFeatureSetDAO:
         if params.shreveOrderEnabled:
             fields.append(QgsField("Shreve", QVariant.Int))
 
-        fields.append(QgsField("MonitorPointOrder", QVariant.Int))
+        fields.append(QgsField("Sharp", QVariant.Double))
 
         if hasObservation:
             obs_field_name = "Obs:"
@@ -281,8 +281,7 @@ class SHPFeatureSetDAO:
         qgsFeature: QgsFeature,
         writer: QgsVectorFileWriter,
         fields: QgsFields,
-        strahler: int,
-        shreve: bool,
+        params: Params,
         attributes: Optional[list[Attribute]],
     ) -> None:
         # Create a new feature
@@ -303,11 +302,14 @@ class SHPFeatureSetDAO:
         copy.setAttribute("Fluxo", feature.flow)
 
         # Set additional attributes like Strahler and Shreve
-        if strahler > 0:
+        if params.strahlerOrderType > 0:
             copy.setAttribute("Strahler", feature.strahler)
 
-        if shreve:
+        if params.shreveOrderEnabled:
             copy.setAttribute("Shreve", feature.shreve)
+
+        if params.monitorPointEnabled:
+            copy.setAttribute("Sharp", feature.sharp)
 
         writer.addFeature(copy)
 
@@ -329,8 +331,7 @@ class SHPFeatureSetDAO:
                 featureSet.raw.getFeature(feature.featureId),
                 writer,
                 fields,
-                params.strahlerOrderType,
-                params.shreveOrderEnabled,
+                params,
                 None,
             )
 
@@ -341,8 +342,7 @@ class SHPFeatureSetDAO:
                 featureSet.raw.getFeature(feature.featureId),
                 writer,
                 fields,
-                params.strahlerOrderType,
-                params.shreveOrderEnabled,
+                params,
                 featureSet.getNewFeatureAttributes(feature.featureId),
             )
 

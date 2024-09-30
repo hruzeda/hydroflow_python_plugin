@@ -102,6 +102,12 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):  # type: ignor
         self.evaluateInference()
 
     @pyqtSlot()  # type: ignore
+    def on_checkBox_MonitorPoint_clicked(self) -> None:
+        self.lineEdit_MonitorPointN.setEnabled(
+            self.checkBox_MonitorPoint.isChecked()
+        )
+
+    @pyqtSlot()  # type: ignore
     def on_pushButton_Exec_clicked(self) -> None:
         try:
             drainageFileName = self.lineEdit_HidLn.text()
@@ -131,12 +137,14 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):  # type: ignor
                 strahlerClassificationType = 1
 
             params = Params(
-                self,
-                drainageFileName,
-                boundaryFileName,
-                tolerance,
-                strahlerClassificationType,
-                self.checkBox_Shreve.isChecked(),
+                origin=self,
+                drainageFileName=drainageFileName,
+                boundaryFileName=boundaryFileName,
+                toleranceXY=tolerance,
+                strahlerOrderType=strahlerClassificationType,
+                shreveOrderEnabled=self.checkBox_Shreve.isChecked(),
+                monitorPointEnabled=self.checkBox_MonitorPoint.isChecked(),
+                monitorPointN=int(self.lineEdit_MonitorPointN.text() or 5),
             )
 
             con = Controller(params)

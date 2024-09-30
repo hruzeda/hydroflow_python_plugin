@@ -13,49 +13,69 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_HydroflowDialogBase(object):
     def __init__(self) -> None:
-        self.pushButton_Exec: QtWidgets.QPushButton
-        self.groupBox_Lim: QtWidgets.QGroupBox
-        self.lineEdit_Lim: QtWidgets.QLineEdit
-        self.pushButton_Lim: QtWidgets.QPushButton
         self.groupBox: QtWidgets.QGroupBox
-        self.label: QtWidgets.QLabel
-        self.comboBox: QtWidgets.QComboBox
-        self.label_2: QtWidgets.QLabel
+        self.groupBox_Lim: QtWidgets.QGroupBox
+        self.groupBox_HidLn: QtWidgets.QGroupBox
+
+        self.lineEdit_Lim: QtWidgets.QLineEdit
+        self.lineEdit_HidLn: QtWidgets.QLineEdit
+        self.lineEdit_MonitorPointN: QtWidgets.QLineEdit
         self.lineEdit_TolXY: QtWidgets.QLineEdit
+
+        self.comboBox: QtWidgets.QComboBox
+
+        self.label: QtWidgets.QLabel
+        self.label_2: QtWidgets.QLabel
         self.label_3: QtWidgets.QLabel
+        self.label_4: QtWidgets.QLabel
+
         self.checkBox_Strahler: QtWidgets.QCheckBox
         self.checkBox_Shreve: QtWidgets.QCheckBox
         self.checkBox_FlowOnly: QtWidgets.QCheckBox
-        self.groupBox_HidLn: QtWidgets.QGroupBox
-        self.lineEdit_HidLn: QtWidgets.QLineEdit
+        self.checkBox_MonitorPoint: QtWidgets.QCheckBox
+
+        self.pushButton_Lim: QtWidgets.QPushButton
         self.pushButton_HidLn: QtWidgets.QPushButton
+        self.pushButton_Exec: QtWidgets.QPushButton
 
     def setupUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
         HydroflowDialogBase.setObjectName("HydroflowDialogBase")
-        HydroflowDialogBase.resize(461, 287)
+        HydroflowDialogBase.resize(567, 380)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        )
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            HydroflowDialogBase.sizePolicy().hasHeightForWidth()
+        )
+        HydroflowDialogBase.setSizePolicy(sizePolicy)
         icon = QtGui.QIcon()
         icon.addPixmap(
             QtGui.QPixmap(":hydroflow.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off
         )
         HydroflowDialogBase.setWindowIcon(icon)
+        HydroflowDialogBase.setAutoFillBackground(True)
         self.pushButton_Exec = QtWidgets.QPushButton(HydroflowDialogBase)
-        self.pushButton_Exec.setGeometry(QtCore.QRect(346, 170, 88, 28))
+        self.pushButton_Exec.setGeometry(QtCore.QRect(450, 332, 88, 28))
         font = QtGui.QFont()
         font.setBold(True)
         self.pushButton_Exec.setFont(font)
         self.pushButton_Exec.setObjectName("pushButton_Exec")
         self.groupBox_Lim = QtWidgets.QGroupBox(HydroflowDialogBase)
-        self.groupBox_Lim.setGeometry(QtCore.QRect(10, 80, 441, 61))
+        self.groupBox_Lim.setGeometry(QtCore.QRect(286, 10, 264, 61))
         font = QtGui.QFont()
         font.setBold(True)
         self.groupBox_Lim.setFont(font)
+        self.groupBox_Lim.setAutoFillBackground(False)
+        self.groupBox_Lim.setStyleSheet("QGroupBox { border: 1px solid #575859; }")
         self.groupBox_Lim.setObjectName("groupBox_Lim")
         self.lineEdit_Lim = QtWidgets.QLineEdit(self.groupBox_Lim)
         self.lineEdit_Lim.setEnabled(False)
-        self.lineEdit_Lim.setGeometry(QtCore.QRect(10, 27, 381, 26))
+        self.lineEdit_Lim.setGeometry(QtCore.QRect(10, 27, 205, 26))
         self.lineEdit_Lim.setObjectName("lineEdit_Lim")
         self.pushButton_Lim = QtWidgets.QPushButton(self.groupBox_Lim)
-        self.pushButton_Lim.setGeometry(QtCore.QRect(400, 26, 30, 28))
+        self.pushButton_Lim.setGeometry(QtCore.QRect(224, 26, 30, 28))
         self.pushButton_Lim.setText("")
         icon1 = QtGui.QIcon()
         icon1.addPixmap(
@@ -64,57 +84,78 @@ class Ui_HydroflowDialogBase(object):
         self.pushButton_Lim.setIcon(icon1)
         self.pushButton_Lim.setObjectName("pushButton_Lim")
         self.groupBox = QtWidgets.QGroupBox(HydroflowDialogBase)
-        self.groupBox.setGeometry(QtCore.QRect(10, 150, 314, 122))
+        self.groupBox.setGeometry(QtCore.QRect(10, 82, 541, 231))
         font = QtGui.QFont()
         font.setBold(True)
         self.groupBox.setFont(font)
+        self.groupBox.setAutoFillBackground(False)
+        self.groupBox.setStyleSheet("QGroupBox { border: 1px solid #575859; }")
+        self.groupBox.setFlat(False)
+        self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.label = QtWidgets.QLabel(self.groupBox)
-        self.label.setGeometry(QtCore.QRect(10, 20, 105, 16))
+        self.label.setGeometry(QtCore.QRect(10, 130, 105, 16))
         font = QtGui.QFont()
         font.setBold(True)
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.comboBox = QtWidgets.QComboBox(self.groupBox)
-        self.comboBox.setGeometry(QtCore.QRect(10, 40, 111, 22))
+        self.comboBox.setGeometry(QtCore.QRect(10, 150, 161, 22))
         self.comboBox.setObjectName("comboBox")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.label_2 = QtWidgets.QLabel(self.groupBox)
-        self.label_2.setGeometry(QtCore.QRect(10, 70, 81, 16))
+        self.label_2.setGeometry(QtCore.QRect(10, 180, 81, 16))
+        self.label_2.setAlignment(QtCore.Qt.AlignRight)
         self.label_2.setObjectName("label_2")
         self.lineEdit_TolXY = QtWidgets.QLineEdit(self.groupBox)
-        self.lineEdit_TolXY.setGeometry(QtCore.QRect(10, 90, 113, 20))
+        self.lineEdit_TolXY.setGeometry(QtCore.QRect(10, 200, 161, 20))
         self.lineEdit_TolXY.setText("0.001")
+        self.lineEdit_TolXY.setAlignment(QtCore.Qt.AlignRight)
         self.lineEdit_TolXY.setObjectName("lineEdit_TolXY")
+        self.checkBox_FlowOnly = QtWidgets.QCheckBox(self.groupBox)
+        self.checkBox_FlowOnly.setGeometry(QtCore.QRect(10, 96, 131, 18))
+        self.checkBox_FlowOnly.setObjectName("checkBox_FlowOnly")
         self.label_3 = QtWidgets.QLabel(self.groupBox)
-        self.label_3.setGeometry(QtCore.QRect(145, 20, 51, 16))
+        self.label_3.setGeometry(QtCore.QRect(10, 25, 51, 16))
         self.label_3.setObjectName("label_3")
         self.checkBox_Strahler = QtWidgets.QCheckBox(self.groupBox)
-        self.checkBox_Strahler.setGeometry(QtCore.QRect(145, 40, 131, 18))
+        self.checkBox_Strahler.setGeometry(QtCore.QRect(10, 45, 131, 18))
         self.checkBox_Strahler.setChecked(True)
         self.checkBox_Strahler.setObjectName("checkBox_Strahler")
         self.checkBox_Shreve = QtWidgets.QCheckBox(self.groupBox)
-        self.checkBox_Shreve.setGeometry(QtCore.QRect(145, 65, 131, 18))
+        self.checkBox_Shreve.setGeometry(QtCore.QRect(10, 70, 131, 18))
         self.checkBox_Shreve.setChecked(True)
         self.checkBox_Shreve.setObjectName("checkBox_Shreve")
-        self.checkBox_FlowOnly = QtWidgets.QCheckBox(self.groupBox)
-        self.checkBox_FlowOnly.setGeometry(QtCore.QRect(145, 91, 131, 18))
-        self.checkBox_FlowOnly.setObjectName("checkBox_FlowOnly")
+        self.checkBox_MonitorPoint = QtWidgets.QCheckBox(self.groupBox)
+        self.checkBox_MonitorPoint.setGeometry(QtCore.QRect(300, 45, 221, 18))
+        self.checkBox_MonitorPoint.setObjectName("checkBox_MonitorPoint")
+        self.label_4 = QtWidgets.QLabel(self.groupBox)
+        self.label_4.setGeometry(QtCore.QRect(270, 70, 251, 20))
+        self.label_4.setAlignment(QtCore.Qt.AlignRight)
+        self.label_4.setObjectName("label_4")
+        self.lineEdit_MonitorPointN = QtWidgets.QLineEdit(self.groupBox)
+        self.lineEdit_MonitorPointN.setEnabled(False)
+        self.lineEdit_MonitorPointN.setGeometry(QtCore.QRect(320, 94, 201, 20))
+        self.lineEdit_MonitorPointN.setText("5")
+        self.lineEdit_MonitorPointN.setObjectName("lineEdit_MonitorPointN")
         self.groupBox_HidLn = QtWidgets.QGroupBox(HydroflowDialogBase)
-        self.groupBox_HidLn.setGeometry(QtCore.QRect(10, 10, 441, 61))
+        self.groupBox_HidLn.setGeometry(QtCore.QRect(10, 10, 264, 61))
         font = QtGui.QFont()
         font.setBold(True)
         self.groupBox_HidLn.setFont(font)
+        self.groupBox_HidLn.setAutoFillBackground(False)
+        self.groupBox_HidLn.setStyleSheet("QGroupBox { border: 1px solid #575859; }")
+        self.groupBox_HidLn.setFlat(False)
         self.groupBox_HidLn.setObjectName("groupBox_HidLn")
         self.lineEdit_HidLn = QtWidgets.QLineEdit(self.groupBox_HidLn)
         self.lineEdit_HidLn.setEnabled(False)
-        self.lineEdit_HidLn.setGeometry(QtCore.QRect(10, 27, 381, 26))
+        self.lineEdit_HidLn.setGeometry(QtCore.QRect(10, 27, 205, 26))
         self.lineEdit_HidLn.setObjectName("lineEdit_HidLn")
         self.pushButton_HidLn = QtWidgets.QPushButton(self.groupBox_HidLn)
-        self.pushButton_HidLn.setGeometry(QtCore.QRect(400, 26, 30, 28))
+        self.pushButton_HidLn.setGeometry(QtCore.QRect(224, 26, 30, 28))
         self.pushButton_HidLn.setText("")
         self.pushButton_HidLn.setIcon(icon1)
         self.pushButton_HidLn.setObjectName("pushButton_HidLn")
@@ -123,7 +164,7 @@ class Ui_HydroflowDialogBase(object):
         self.comboBox.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(HydroflowDialogBase)
 
-    def retranslateUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
+    def retranslateUi(self, HydroflowDialogBase):
         _translate = QtCore.QCoreApplication.translate
         HydroflowDialogBase.setWindowTitle(
             _translate("HydroflowDialogBase", "Hydroflow")
@@ -141,6 +182,9 @@ class Ui_HydroflowDialogBase(object):
         self.comboBox.setItemText(2, _translate("HydroflowDialogBase", "Pés"))
         self.comboBox.setItemText(3, _translate("HydroflowDialogBase", "Outro"))
         self.label_2.setText(_translate("HydroflowDialogBase", "Tolerância XY:"))
+        self.checkBox_FlowOnly.setText(
+            _translate("HydroflowDialogBase", "Somente fluxos")
+        )
         self.label_3.setText(_translate("HydroflowDialogBase", "Inferir:"))
         self.checkBox_Strahler.setText(
             _translate("HydroflowDialogBase", "Ordens por Strahler")
@@ -148,8 +192,13 @@ class Ui_HydroflowDialogBase(object):
         self.checkBox_Shreve.setText(
             _translate("HydroflowDialogBase", "Ordens por Shreve")
         )
-        self.checkBox_FlowOnly.setText(
-            _translate("HydroflowDialogBase", "Somente fluxos")
+        self.checkBox_MonitorPoint.setText(
+            _translate("HydroflowDialogBase", "Sugerir trechos para monitoramento")
+        )
+        self.label_4.setText(
+            _translate(
+                "HydroflowDialogBase", "Quantidade de trechos para monitoramento"
+            )
         )
         self.groupBox_HidLn.setTitle(
             _translate("HydroflowDialogBase", " Rede de drenagem ")

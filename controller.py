@@ -3,6 +3,7 @@ from qgis.PyQt import QtWidgets
 
 from .classificator import Classificator
 from .frmlog import FrmLog
+from .monitorpoint import MonitorPoint
 from .params import Params
 from .utils.message import Message
 from .utils.shp_feature_set_dao import SHPFeatureSetDAO
@@ -80,6 +81,7 @@ class Controller:
         classificator = Classificator(drainage, boundary, params, log)
 
         result = classificator.classifyWaterBasin()
+
         params.origin.setCursor(Qt.ArrowCursor)
         self.displayMessage(result)
 
@@ -96,6 +98,10 @@ class Controller:
                 params.origin.setCursor(Qt.WaitCursor)
                 params.newFileName = new
                 log.result = new
+
+                if params.monitorPointEnabled:
+                    mp = MonitorPoint(drainage)
+                    mp.run(log)
 
                 # Gravando os arquivos.
                 dao.saveFeatureSet(drainage, params, log)

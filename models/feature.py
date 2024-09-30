@@ -26,19 +26,11 @@ class Feature:
         self.flow = flow
         self.strahler = strahler
         self.shreve = shreve
+        self.sharp: Optional[float] = None
         self.vertexList = vertexList or []
         self.segmentsList = segmentsList or []
         self.process = process
         self.hasObservation = hasObservation
-
-    def setClassification(self, flow: int, strahler: int, shreve: int) -> None:
-        self.flow = flow
-        self.strahler = strahler
-        self.shreve = shreve
-
-    # def cleanup(self) -> None:
-    #     self.vertexList = []
-    #     self.segmentsList = []
 
     def __str__(self) -> str:
         return (
@@ -46,6 +38,7 @@ class Feature:
             f"Flow: {self.flow}, "
             f"Strahler: {self.strahler}, "
             f"Shreve: {self.shreve}, "
+            f"Sharp: {self.sharp}, "
             f"Vertices: {len(self.vertexList)}, "
             f"Segments: {len(self.segmentsList)}"
         )

@@ -431,10 +431,10 @@ class Classificator:
                 # Gravando classificação.
                 if result == 0:
                     self.drainage.setFeatureClassification(
-                        node.featureId,
-                        node.flow,
-                        node.strahler,
-                        node.shreve,
+                        featureId=node.featureId,
+                        flow=node.flow,
+                        strahler=node.strahler,
+                        shreve=node.shreve,
                     )
             else:  # Feição já processada!
                 msg_1 = (
