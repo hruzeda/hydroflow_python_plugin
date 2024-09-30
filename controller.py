@@ -15,7 +15,7 @@ class Controller:
 
     def validateFile(self, fileName: str, baseName: str, shapeType: int) -> bool:
         return (
-            SHPFeatureSetDAO(self.params.toleranceXY).loadFeatureSet(
+            SHPFeatureSetDAO(self.params.toleranceXY).load_feature_set(
                 fileName, baseName, shapeType
             )
             is not None
@@ -66,8 +66,8 @@ class Controller:
         params.origin.setCursor(Qt.WaitCursor)
         dao = SHPFeatureSetDAO(params.toleranceXY)
 
-        drainage = dao.loadFeatureSet(params.drainageFileName, "drenagem", 0)
-        boundary = dao.loadFeatureSet(params.boundaryFileName, "limite", 1)
+        drainage = dao.load_feature_set(params.drainageFileName, "drenagem", 0)
+        boundary = dao.load_feature_set(params.boundaryFileName, "limite", 1)
 
         if not drainage:
             params.origin.setCursor(Qt.ArrowCursor)
@@ -104,7 +104,7 @@ class Controller:
                     mp.run(log)
 
                 # Gravando os arquivos.
-                dao.saveFeatureSet(drainage, params, log)
+                dao.save_feature_set(drainage, params, log)
 
                 params.origin.setCursor(Qt.ArrowCursor)
 

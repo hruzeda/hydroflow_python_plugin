@@ -12,6 +12,7 @@
 *.rej
 *.so
 *.so.*
+*.zip
 *_pch.h.cpp
 *_resource.rc
 *.qm
