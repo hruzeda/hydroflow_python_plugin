@@ -20,7 +20,9 @@ class MonitorPoint:
 
         for sharp in final_result.keys():
             for feature_id in final_result[sharp]:
-                self.feature_set.setFeatureClassification(feature_id, sharp=sharp)
+                self.feature_set.setFeatureClassification(
+                    featureId=feature_id, sharp=sharp
+                )
 
     def calculate_sharp(self, log: Message) -> list[float]:
         Ma = float(max(self.fid_shreve_map))

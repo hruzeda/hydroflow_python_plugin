@@ -125,6 +125,7 @@ class Relation:
 
         # Obtendo o índice primário.
         primaryIndex = self.findPrimaryIndex(featureId)
+        relatedSegment = None
 
         if primaryIndex >= 0:
             done = False
@@ -136,7 +137,7 @@ class Relation:
                     # Lendo evento.
                     eventItem = self.items[primaryItem.value]
 
-                    relatedSegment = None
+                    evaluate = True
                     if (
                         eventItem.source.featureId == featureId
                         and eventItem.destination.featureId != parentFeatureId
@@ -147,8 +148,10 @@ class Relation:
                         and eventItem.source.featureId != parentFeatureId
                     ):
                         relatedSegment = eventItem.source
+                    else:
+                        evaluate = False
 
-                    if relatedSegment:
+                    if evaluate:
                         isChild = True
                         for childSegment in siblings:
                             if relatedSegment.featureId == childSegment.featureId:

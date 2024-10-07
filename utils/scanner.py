@@ -219,6 +219,22 @@ class Scanner:
                 return (
                     -1 if self.geo.smallerThan(xA, xB) else 1
                 )  # Entra depois, sai depois!
+            elif any(
+                [
+                    a.eventType == 1 and b.eventType == 0,
+                    a.eventType == 2 and b.eventType == 1,
+                    a.eventType == 0 and b.eventType == 2,
+                ]
+            ):
+                return 1
+            elif any(
+                [
+                    a.eventType == 0 and b.eventType == 1,
+                    a.eventType == 1 and b.eventType == 2,
+                    a.eventType == 2 and b.eventType == 0,
+                ]
+            ):
+                return -1
 
             return -1 if a.eventType == b.eventType else 1
 

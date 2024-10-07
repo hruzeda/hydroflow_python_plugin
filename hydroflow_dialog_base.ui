@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>567</width>
-    <height>380</height>
+    <width>563</width>
+    <height>316</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -30,7 +30,7 @@
    <property name="geometry">
     <rect>
      <x>450</x>
-     <y>332</y>
+     <y>270</y>
      <width>88</width>
      <height>28</height>
     </rect>
@@ -104,7 +104,7 @@
      <x>10</x>
      <y>82</y>
      <width>541</width>
-     <height>231</height>
+     <height>171</height>
     </rect>
    </property>
    <property name="font">
@@ -127,62 +127,11 @@
    <property name="checkable">
     <bool>false</bool>
    </property>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>130</y>
-      <width>105</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Unidade do mapa:</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="comboBox">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>150</y>
-      <width>161</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="currentIndex">
-     <number>0</number>
-    </property>
-    <item>
-     <property name="text">
-      <string>Metros</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Quilômetros</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Pés</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Outro</string>
-     </property>
-    </item>
-   </widget>
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>180</y>
+      <y>120</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -198,7 +147,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>200</y>
+      <y>140</y>
       <width>161</width>
       <height>20</height>
      </rect>

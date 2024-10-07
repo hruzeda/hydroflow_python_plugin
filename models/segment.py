@@ -45,13 +45,14 @@ class Segment:
         #  2º - idFeicao;
         #  3° - id.
 
+        if self.setId and segment.setId:
+            if self.setId < segment.setId:
+                return -1
+            if self.setId > segment.setId:
+                return 1
         if self.featureId < segment.featureId:
             return -1
         if self.featureId > segment.featureId:
-            return 1
-        if self.setId and segment.setId and self.setId < segment.setId:
-            return -1
-        if self.setId and segment.setId and self.setId > segment.setId:
             return 1
         if self.segmentId < segment.segmentId:
             return -1

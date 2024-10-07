@@ -22,9 +22,6 @@ class Ui_HydroflowDialogBase(object):
         self.lineEdit_MonitorPointN: QtWidgets.QLineEdit
         self.lineEdit_TolXY: QtWidgets.QLineEdit
 
-        self.comboBox: QtWidgets.QComboBox
-
-        self.label: QtWidgets.QLabel
         self.label_2: QtWidgets.QLabel
         self.label_3: QtWidgets.QLabel
         self.label_4: QtWidgets.QLabel
@@ -40,7 +37,7 @@ class Ui_HydroflowDialogBase(object):
 
     def setupUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
         HydroflowDialogBase.setObjectName("HydroflowDialogBase")
-        HydroflowDialogBase.resize(567, 380)
+        HydroflowDialogBase.resize(563, 316)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
         )
@@ -57,7 +54,7 @@ class Ui_HydroflowDialogBase(object):
         HydroflowDialogBase.setWindowIcon(icon)
         HydroflowDialogBase.setAutoFillBackground(True)
         self.pushButton_Exec = QtWidgets.QPushButton(HydroflowDialogBase)
-        self.pushButton_Exec.setGeometry(QtCore.QRect(450, 332, 88, 28))
+        self.pushButton_Exec.setGeometry(QtCore.QRect(450, 270, 88, 28))
         font = QtGui.QFont()
         font.setBold(True)
         self.pushButton_Exec.setFont(font)
@@ -84,7 +81,7 @@ class Ui_HydroflowDialogBase(object):
         self.pushButton_Lim.setIcon(icon1)
         self.pushButton_Lim.setObjectName("pushButton_Lim")
         self.groupBox = QtWidgets.QGroupBox(HydroflowDialogBase)
-        self.groupBox.setGeometry(QtCore.QRect(10, 82, 541, 231))
+        self.groupBox.setGeometry(QtCore.QRect(10, 82, 541, 171))
         font = QtGui.QFont()
         font.setBold(True)
         self.groupBox.setFont(font)
@@ -93,25 +90,12 @@ class Ui_HydroflowDialogBase(object):
         self.groupBox.setFlat(False)
         self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
-        self.label = QtWidgets.QLabel(self.groupBox)
-        self.label.setGeometry(QtCore.QRect(10, 130, 105, 16))
-        font = QtGui.QFont()
-        font.setBold(True)
-        self.label.setFont(font)
-        self.label.setObjectName("label")
-        self.comboBox = QtWidgets.QComboBox(self.groupBox)
-        self.comboBox.setGeometry(QtCore.QRect(10, 150, 161, 22))
-        self.comboBox.setObjectName("comboBox")
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
         self.label_2 = QtWidgets.QLabel(self.groupBox)
-        self.label_2.setGeometry(QtCore.QRect(10, 180, 81, 16))
+        self.label_2.setGeometry(QtCore.QRect(10, 120, 81, 16))
         self.label_2.setAlignment(QtCore.Qt.AlignRight)
         self.label_2.setObjectName("label_2")
         self.lineEdit_TolXY = QtWidgets.QLineEdit(self.groupBox)
-        self.lineEdit_TolXY.setGeometry(QtCore.QRect(10, 200, 161, 20))
+        self.lineEdit_TolXY.setGeometry(QtCore.QRect(10, 140, 161, 20))
         self.lineEdit_TolXY.setText("0.001")
         self.lineEdit_TolXY.setAlignment(QtCore.Qt.AlignRight)
         self.lineEdit_TolXY.setObjectName("lineEdit_TolXY")
@@ -161,7 +145,6 @@ class Ui_HydroflowDialogBase(object):
         self.pushButton_HidLn.setObjectName("pushButton_HidLn")
 
         self.retranslateUi(HydroflowDialogBase)
-        self.comboBox.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(HydroflowDialogBase)
 
     def retranslateUi(self, HydroflowDialogBase):
@@ -174,13 +157,6 @@ class Ui_HydroflowDialogBase(object):
             _translate("HydroflowDialogBase", " Limite da área ")
         )
         self.groupBox.setTitle(_translate("HydroflowDialogBase", " Opções "))
-        self.label.setText(_translate("HydroflowDialogBase", "Unidade do mapa:"))
-        self.comboBox.setItemText(0, _translate("HydroflowDialogBase", "Metros"))
-        self.comboBox.setItemText(
-            1, _translate("HydroflowDialogBase", "Quilômetros")
-        )
-        self.comboBox.setItemText(2, _translate("HydroflowDialogBase", "Pés"))
-        self.comboBox.setItemText(3, _translate("HydroflowDialogBase", "Outro"))
         self.label_2.setText(_translate("HydroflowDialogBase", "Tolerância XY:"))
         self.checkBox_FlowOnly.setText(
             _translate("HydroflowDialogBase", "Somente fluxos")

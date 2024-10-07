@@ -67,7 +67,7 @@ class SHPFeatureSetDAO:
                     new_feature = part_id > 0
                     feature = Feature(
                         featureId=new_feature_id if new_feature else feature_id,
-                        setId=shape_type or -1,
+                        setId=shape_type,
                         featureType=geometry.wkbType(),
                     )
 
@@ -91,47 +91,25 @@ class SHPFeatureSetDAO:
                         vertex_A = vertex_list[i]
                         vertex_B = vertex_list[i + 1]
 
-                        if vertex_A.x + self.tolerance < vertex_B.x:
-                            segments_list.append(
-                                Segment(
-                                    segmentId=len(segments_list),
-                                    featureId=feature.featureId,
-                                    setId=shape_type,
-                                    a=vertex_A,
-                                    b=vertex_B,
-                                )
+                        # Determine the correct orientation
+                        if vertex_A.x + self.tolerance < vertex_B.x or (
+                            abs(vertex_A.x - vertex_B.x) < self.tolerance
+                            and vertex_A.y + self.tolerance < vertex_B.y
+                        ):
+                            start, end = vertex_A, vertex_B
+                        else:
+                            start, end = vertex_B, vertex_A
+
+                        # Create the segment once with determined start and end points
+                        segments_list.append(
+                            Segment(
+                                segmentId=len(segments_list),
+                                featureId=feature.featureId,
+                                setId=shape_type,
+                                a=start,
+                                b=end,
                             )
-                        elif vertex_B.x + self.tolerance < vertex_A.x:
-                            segments_list.append(
-                                Segment(
-                                    segmentId=len(segments_list),
-                                    featureId=feature.featureId,
-                                    setId=shape_type,
-                                    a=vertex_B,
-                                    b=vertex_A,
-                                )
-                            )
-                        else:  # Vertical
-                            if vertex_A.y + self.tolerance < vertex_B.y:
-                                segments_list.append(  # NOSONAR
-                                    Segment(
-                                        segmentId=len(segments_list),
-                                        featureId=feature.featureId,
-                                        setId=shape_type,
-                                        a=vertex_A,
-                                        b=vertex_B,
-                                    )
-                                )
-                            else:
-                                segments_list.append(  # NOSONAR
-                                    Segment(
-                                        segmentId=len(segments_list),
-                                        featureId=feature.featureId,
-                                        setId=shape_type,
-                                        a=vertex_B,
-                                        b=vertex_A,
-                                    )
-                                )
+                        )
 
                     feature.vertexList = vertex_list
                     feature.segmentsList = segments_list
@@ -389,7 +367,7 @@ class SHPFeatureSetDAO:
         buffer.setEnabled(True)
 
         sharp_label = QgsPalLayerSettings()
-        sharp_label.fieldName = '"Sharp"'
+        sharp_label.fieldName = "Sharp"
         sharp_label.priority = 100
         text_format = QgsTextFormat()
         text_format.setFont(QFont("Arial", 10))
@@ -399,7 +377,7 @@ class SHPFeatureSetDAO:
         sharp_label.placement = QgsPalLayerSettings.Line
 
         shreve_label = QgsPalLayerSettings()
-        shreve_label.fieldName = '"Shreve"'
+        shreve_label.fieldName = "Shreve"
         shreve_label.priority = 35
         text_format = QgsTextFormat()
         text_format.setFont(QFont("Arial", 8))
