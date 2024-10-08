@@ -1,4 +1,5 @@
 import functools
+from decimal import Decimal
 from typing import Optional
 
 from ..models.feature import Feature
@@ -69,7 +70,7 @@ class Scanner:
             return self.lines.pop()
         return None
 
-    def nextInLine(self, scanLine: float) -> Optional[ScanVertex]:
+    def nextInLine(self, scanLine: Decimal) -> Optional[ScanVertex]:
         result = None
 
         start = 0
@@ -151,7 +152,7 @@ class Scanner:
 
         self.lines.append(line)
 
-    def scanLineComparator(self, scanLine: float, vertex: Vertex) -> int:
+    def scanLineComparator(self, scanLine: Decimal, vertex: Vertex) -> int:
         if not vertex.withinTolerance(scanLine, self.geo.tolerance):
             return 1 if self.geo.smallerThan(scanLine, vertex.x) else -1
         return 0
@@ -219,7 +220,7 @@ class Scanner:
                 return (
                     -1 if self.geo.smallerThan(xA, xB) else 1
                 )  # Entra depois, sai depois!
-            elif any(
+            if any(
                 [
                     a.eventType == 1 and b.eventType == 0,
                     a.eventType == 2 and b.eventType == 1,
@@ -227,7 +228,7 @@ class Scanner:
                 ]
             ):
                 return 1
-            elif any(
+            if any(
                 [
                     a.eventType == 0 and b.eventType == 1,
                     a.eventType == 1 and b.eventType == 2,

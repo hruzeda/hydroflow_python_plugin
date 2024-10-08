@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from qgis.core import QgsVectorLayer
@@ -40,7 +41,7 @@ class FeatureSet:
         flow: Optional[int] = None,
         strahler: Optional[int] = None,
         shreve: Optional[int] = None,
-        sharp: Optional[float] = None,
+        sharp: Optional[Decimal] = None,
     ) -> None:
         if featureId < len(self.featuresList):
             feature = self.featuresList[featureId]

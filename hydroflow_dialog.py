@@ -23,6 +23,7 @@
 """
 
 import traceback
+from decimal import Decimal
 from typing import Any
 
 from PyQt5 import QtWidgets
@@ -118,9 +119,9 @@ class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):  # type: ignor
                 self.lineEdit_TolXY.setText("0")
 
             try:
-                tolerance = float(self.lineEdit_TolXY.text())
+                tolerance = Decimal(self.lineEdit_TolXY.text())
             except ValueError:
-                tolerance = -1
+                tolerance = Decimal(-1)
 
             if tolerance < 0:
                 self.displayMessage(4)

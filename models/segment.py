@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from .vertex import Vertex
@@ -19,19 +20,19 @@ class Segment:
         self.b = b
         self.isMouth = False
 
-    def getSmallerX(self, tolerance: float) -> float:
+    def getSmallerX(self, tolerance: Decimal) -> Decimal:
         return self.a.x if self.a.x + tolerance < self.b.x else self.b.x
 
-    def isPoint(self, tolerance: float) -> bool:
+    def isPoint(self, tolerance: Decimal) -> bool:
         return (
             abs(self.a.x - self.b.x) <= tolerance
             and abs(self.a.y - self.b.y) <= tolerance
         )
 
-    def isHorizontal(self, tolerance: float) -> bool:
+    def isHorizontal(self, tolerance: Decimal) -> bool:
         return not self.isPoint(tolerance) and abs(self.a.y - self.b.y) <= tolerance
 
-    def isVertical(self, tolerance: float) -> bool:
+    def isVertical(self, tolerance: Decimal) -> bool:
         return not self.isPoint(tolerance) and abs(self.a.x - self.b.x) <= tolerance
 
     def compareTo(self, segment: "Segment") -> int:
@@ -59,3 +60,10 @@ class Segment:
         if self.segmentId > segment.segmentId:
             return 1
         return 0
+
+    def __str__(self) -> str:
+        return (
+            f"Segment {self.segmentId} ({self.featureId})\n"
+            f"a: {self.a}\n"
+            f"b: {self.b}"
+        )

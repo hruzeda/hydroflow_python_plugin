@@ -40,24 +40,34 @@ class Relation:
         relation_type: int,
     ) -> None:
         newItem = RelationItem(source, destination, relation_type)
+        target_list = self.items if relation_type == 0 else self.err
 
-        for i, item in enumerate(self.items if relation_type == 0 else self.err):
+        start = 0
+        end = len(target_list) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = target_list[middle]
             comp = self.comparePosition(newItem, item)
 
-            if comp == 0:
-                return
-
             if comp < 0:
-                if relation_type == 0:
-                    self.items.insert(i, newItem)
+                if start in (middle, end):
+                    target_list.insert(middle, newItem)
+                    return
+                if start < middle:
+                    end = middle - 1
                 else:
-                    self.err.insert(i, newItem)
+                    target_list.insert(0, newItem)
+                    return
+            elif comp > 0:
+                if middle == len(target_list) - 1:
+                    target_list.append(newItem)
+                    return
+                if start == end:
+                    target_list.insert(middle, newItem)
+                    return
+                start = middle + 1
+            else:
                 return
-
-        if relation_type == 0:
-            self.items.append(newItem)
-        else:
-            self.err.append(newItem)
 
     def addMouth(self, drainage: Segment, boundary: Segment) -> None:
         # Garantindo que o primeiro argumento é da bacia.
@@ -125,7 +135,6 @@ class Relation:
 
         # Obtendo o índice primário.
         primaryIndex = self.findPrimaryIndex(featureId)
-        relatedSegment = None
 
         if primaryIndex >= 0:
             done = False
@@ -137,7 +146,7 @@ class Relation:
                     # Lendo evento.
                     eventItem = self.items[primaryItem.value]
 
-                    evaluate = True
+                    relatedSegment = None
                     if (
                         eventItem.source.featureId == featureId
                         and eventItem.destination.featureId != parentFeatureId
@@ -148,10 +157,8 @@ class Relation:
                         and eventItem.source.featureId != parentFeatureId
                     ):
                         relatedSegment = eventItem.source
-                    else:
-                        evaluate = False
 
-                    if evaluate:
+                    if relatedSegment:
                         isChild = True
                         for childSegment in siblings:
                             if relatedSegment.featureId == childSegment.featureId:
@@ -220,6 +227,7 @@ class Relation:
         for i, indexItem in enumerate(self.index):
             if indexItem.featureId != featureId:
                 self.primaryIndex.append(IndexItem(indexItem.featureId, i))
+        self.primaryIndex.sort(key=functools.cmp_to_key(self.compareIndexItems))
 
     def reportUnexpectedRelations(self, log: Message) -> None:
         log.append(

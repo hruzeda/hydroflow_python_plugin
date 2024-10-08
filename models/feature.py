@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from .segment import Segment
@@ -26,7 +27,7 @@ class Feature:
         self.flow = flow
         self.strahler = strahler
         self.shreve = shreve
-        self.sharp: Optional[float] = None
+        self.sharp: Optional[Decimal] = None
         self.vertexList = vertexList or []
         self.segmentsList = segmentsList or []
         self.process = process

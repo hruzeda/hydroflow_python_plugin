@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from qgis.PyQt import QtWidgets
 
 
@@ -7,7 +9,7 @@ class Params:
         origin: QtWidgets.QDialog,
         drainageFileName: str = "",
         boundaryFileName: str = "",
-        toleranceXY: float = 0,
+        toleranceXY: Decimal = Decimal(0),
         strahlerOrderType: int = 0,
         shreveOrderEnabled: bool = False,
         monitorPointEnabled: bool = False,

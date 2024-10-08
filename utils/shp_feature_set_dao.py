@@ -1,6 +1,7 @@
 import shutil
+from decimal import Decimal
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from PyQt5.QtCore import QVariant
 from qgis.core import (
@@ -8,6 +9,7 @@ from qgis.core import (
     QgsFeatureRequest,
     QgsField,
     QgsFields,
+    QgsGeometry,
     QgsLineSymbol,
     QgsPalLayerSettings,
     QgsProject,
@@ -19,6 +21,7 @@ from qgis.core import (
     QgsTextFormat,
     QgsVectorFileWriter,
     QgsVectorLayer,
+    QgsWkbTypes,
 )
 from qgis.PyQt.QtGui import QColor, QFont
 
@@ -34,8 +37,11 @@ from ..utils.message import Message
 
 
 class SHPFeatureSetDAO:
-    def __init__(self, tolerance: float = 0) -> None:
+    def __init__(self, tolerance: Decimal = Decimal(0)) -> None:
         self.tolerance = tolerance
+        self.msg_1 = "Feição com partes multiplas. Veja: "
+        self.msg_2 = "Parte da feição FID "
+        self.msg_3 = "Feição não processada."
 
     # Tipos: 0 - bacia; 1 - limite.
     def load_feature_set(
@@ -51,135 +57,186 @@ class SHPFeatureSetDAO:
         obs = Observation()
         feature_set = FeatureSet(shape_type, filename, layer.wkbType(), obs, layer)
 
-        msg_1 = "Feição com partes multiplas. Veja: "
-        msg_2 = "Parte da feição FID "
-        msg_3 = "Feição não processada."
-
         # Montando as feições
         new_feature_id = layer.featureCount()
-        for feature_id, qgs_feature in enumerate(layer.getFeatures()):
+        for feature_id, qgs_feature in enumerate(
+            layer.getFeatures(QgsFeatureRequest())
+        ):
             geometry = qgs_feature.geometry()
             if geometry.isMultipart():
-                # Lendo as partes.
-                vertex_id = 0
-                parts_iterator = geometry.parts()
-                for part_id, part in enumerate(parts_iterator):
-                    new_feature = part_id > 0
-                    feature = Feature(
-                        featureId=new_feature_id if new_feature else feature_id,
-                        setId=shape_type,
-                        featureType=geometry.wkbType(),
-                    )
-
-                    # Lendo os vértices da parte
-                    vertex_list: list[Vertex] = []
-                    vertices_iterator = part.vertices()
-                    for vertex in vertices_iterator:
-                        vertex_list.append(
-                            Vertex(
-                                vertexId=vertex_id,
-                                x=vertex.x(),
-                                y=vertex.y(),
-                                last=not vertices_iterator.hasNext(),
-                            )
-                        )
-                        vertex_id += 1
-
-                    # Montando os segmentos.
-                    segments_list: list[Segment] = []
-                    for i in range(len(vertex_list) - 1):
-                        vertex_A = vertex_list[i]
-                        vertex_B = vertex_list[i + 1]
-
-                        # Determine the correct orientation
-                        if vertex_A.x + self.tolerance < vertex_B.x or (
-                            abs(vertex_A.x - vertex_B.x) < self.tolerance
-                            and vertex_A.y + self.tolerance < vertex_B.y
-                        ):
-                            start, end = vertex_A, vertex_B
-                        else:
-                            start, end = vertex_B, vertex_A
-
-                        # Create the segment once with determined start and end points
-                        segments_list.append(
-                            Segment(
-                                segmentId=len(segments_list),
-                                featureId=feature.featureId,
-                                setId=shape_type,
-                                a=start,
-                                b=end,
-                            )
-                        )
-
-                    feature.vertexList = vertex_list
-                    feature.segmentsList = segments_list
-
-                    if not new_feature:  # Feição original.
-                        if parts_iterator.hasNext():
-                            feature.hasObservation = True
-                            obs.set_value(feature_id, msg_1)
-
-                        feature_set.featuresList.append(feature)
-                    else:  # Adicionar novo registro no ShapeFile.
-                        feature.hasObservation = True
-                        obs.set_value(part_id, msg_2 + str(feature_id) + ".")
-
-                        feature_set.newFeaturesList.append(feature)
-                        feature_set.newFeaturesAttributes.append(
-                            NewFeatureAttributes(
-                                featureId=new_feature_id,
-                                attributes=self.read_attributes(
-                                    layer, qgs_feature.id()
-                                ),
-                            )
-                        )
-                        new_feature_id += 1
+                self._parse_multi_part_feature(
+                    feature_id,
+                    feature_set,
+                    qgs_feature,
+                    geometry,
+                    layer,
+                    new_feature_id,
+                    shape_type,
+                    obs,
+                )
 
             else:
-                vertex_list = (
-                    [
-                        Vertex(x=point.x(), y=point.y())
-                        for point in geometry.asPolyline()
-                    ]
-                    if not geometry.isNull()
-                    else []
+                self._parse_single_part_feature(
+                    feature_set, qgs_feature, geometry, shape_type, obs
                 )
-                if len(vertex_list) == 1:
-                    feature = Feature(
-                        featureId=qgs_feature.id(),
-                        setId=shape_type or -1,
-                        featureType=geometry.wkbType(),
-                        vertexList=vertex_list,
-                    )
-                    feature.segmentsList = [
-                        Segment(  # Montando um segmento degenerado!
-                            segmentId=0,
-                            featureId=feature.featureId,
-                            setId=shape_type,
-                            a=vertex_list[0],
-                            b=vertex_list[0],
-                        )
-                    ]
-                    if shape_type == 0:  # É bacia. Não processar o elemento!
-                        feature.process = False
-                        feature.hasObservation = True
-                        obs.set_value(qgs_feature.id(), msg_3)
-                else:  # Não tem vertices! Situação de erro do ShapeFile.
-                    feature = Feature(
-                        featureId=qgs_feature.id(),
-                        setId=shape_type or -1,
-                        featureType=geometry.wkbType(),
-                        vertexList=vertex_list,
-                    )
-                    feature.process = False
-                    feature.hasObservation = True
-                    obs.set_value(qgs_feature.id(), msg_3)
-                feature_set.featuresList.append(feature)
 
         # Cadastrando demais atributos da figura.
         feature_set.obs = obs
 
         return feature_set
+
+    def _parse_multi_part_feature(
+        self,
+        feature_id: int,
+        feature_set: FeatureSet,
+        qgs_feature: QgsFeature,
+        geometry: QgsGeometry,
+        layer: QgsVectorLayer,
+        new_feature_id: int,
+        shape_type: int,
+        obs: Observation,
+    ) -> None:
+        # Lendo as partes.
+        parts = self._get_raw_parts(geometry)
+        for part_id, rings_or_lines in enumerate(parts):
+            new_feature = part_id > 0
+            feature = Feature(
+                featureId=new_feature_id if new_feature else feature_id,
+                setId=shape_type,
+                featureType=geometry.wkbType(),
+            )
+
+            # Lendo os vértices da parte
+            vertex_list: list[Vertex] = self._parse_vertices(rings_or_lines)
+
+            # Montando os segmentos.
+            segments_list = self._parse_segments(shape_type, feature, vertex_list)
+
+            feature.vertexList = vertex_list
+            feature.segmentsList = segments_list
+
+            if not new_feature:  # Feição original.
+                if part_id < len(parts) - 1:
+                    feature.hasObservation = True
+                    obs.set_value(feature_id, self.msg_1)
+
+                feature_set.featuresList.append(feature)
+            else:  # Adicionar novo registro no ShapeFile.
+                feature.hasObservation = True
+                obs.set_value(part_id, self.msg_2 + str(feature_id) + ".")
+
+                feature_set.newFeaturesList.append(feature)
+                feature_set.newFeaturesAttributes.append(
+                    NewFeatureAttributes(
+                        featureId=new_feature_id,
+                        attributes=self.read_attributes(layer, qgs_feature.id()),
+                    )
+                )
+                new_feature_id += 1
+
+    def _get_raw_parts(self, geometry: QgsGeometry) -> list[Any]:
+        parts = (
+            geometry.asMultiPolyline()
+            if geometry.wkbType() == QgsWkbTypes.MultiLineString
+            or QgsWkbTypes.flatType(geometry.wkbType()) == QgsWkbTypes.LineGeometry
+            else geometry.asMultiPolygon()
+        )
+
+        return list(parts)
+
+    def _parse_vertices(self, rings_or_lines: list[Any]) -> list[Vertex]:
+        vertex_list = []
+        vertex_id = 0
+        for i, ring_or_line in enumerate(rings_or_lines):
+            if not isinstance(ring_or_line, list):
+                ring_or_line = [ring_or_line]
+
+            for j, point in enumerate(ring_or_line):
+                vertex_list.append(
+                    Vertex(
+                        vertexId=vertex_id,
+                        x=Decimal(point.x()),
+                        y=Decimal(point.y()),
+                        last=i == len(rings_or_lines) - 1
+                        and j == len(ring_or_line) - 1,
+                    )
+                )
+                vertex_id += 1
+        return vertex_list
+
+    def _parse_segments(
+        self, shape_type: int, feature: Feature, vertex_list: list[Vertex]
+    ) -> list[Segment]:
+        segments_list: list[Segment] = []
+        for i in range(len(vertex_list) - 1):
+            vertex_A = vertex_list[i]
+            vertex_B = vertex_list[i + 1]
+
+            # Determine the correct orientation
+            if vertex_A.x + self.tolerance < vertex_B.x or (
+                abs(vertex_A.x - vertex_B.x) < self.tolerance
+                and vertex_A.y + self.tolerance < vertex_B.y
+            ):
+                start, end = vertex_A, vertex_B
+            else:
+                start, end = vertex_B, vertex_A
+
+            segments_list.append(
+                Segment(
+                    segmentId=len(segments_list),
+                    featureId=feature.featureId,
+                    setId=shape_type,
+                    a=start,
+                    b=end,
+                )
+            )
+
+        return segments_list
+
+    def _parse_single_part_feature(
+        self,
+        feature_set: FeatureSet,
+        qgs_feature: QgsFeature,
+        geometry: QgsGeometry,
+        shape_type: int,
+        obs: Observation,
+    ) -> None:
+        vertex_list = (
+            [Vertex(x=point.x(), y=point.y()) for point in geometry.asPolyline()]
+            if not geometry.isNull()
+            else []
+        )
+        if len(vertex_list) == 1:
+            feature = Feature(
+                featureId=qgs_feature.id(),
+                setId=shape_type or -1,
+                featureType=geometry.wkbType(),
+                vertexList=vertex_list,
+            )
+            feature.segmentsList = [
+                Segment(  # Montando um segmento degenerado!
+                    segmentId=0,
+                    featureId=feature.featureId,
+                    setId=shape_type,
+                    a=vertex_list[0],
+                    b=vertex_list[0],
+                )
+            ]
+            if shape_type == 0:  # É bacia. Não processar o elemento!
+                feature.process = False
+                feature.hasObservation = True
+                obs.set_value(qgs_feature.id(), self.msg_3)
+        else:  # Não tem vertices! Situação de erro do ShapeFile.
+            feature = Feature(
+                featureId=qgs_feature.id(),
+                setId=shape_type or -1,
+                featureType=geometry.wkbType(),
+                vertexList=vertex_list,
+            )
+            feature.process = False
+            feature.hasObservation = True
+            obs.set_value(qgs_feature.id(), self.msg_3)
+        feature_set.featuresList.append(feature)
 
     # Function to read attributes from a QgsVectorLayer feature
     def read_attributes(

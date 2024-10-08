@@ -1,3 +1,4 @@
+from decimal import Decimal
 from math import sqrt
 from typing import Optional
 
@@ -6,21 +7,21 @@ from ..models.vertex import Vertex
 
 
 class Geometry:
-    def __init__(self, tolerance: float = 0) -> None:
+    def __init__(self, tolerance: Decimal = Decimal(0)) -> None:
         self.tolerance = tolerance
 
-    def smallerThan(self, a: float, b: float) -> bool:
+    def smallerThan(self, a: Decimal, b: Decimal) -> bool:
         return a + self.tolerance < b
 
-    def greaterThan(self, a: float, b: float) -> bool:
+    def greaterThan(self, a: Decimal, b: Decimal) -> bool:
         return a - self.tolerance > b
 
     def equalsTo(
         self,
         a: Optional[Vertex] = None,
         b: Optional[Vertex] = None,
-        aPos: Optional[float] = None,
-        bPos: Optional[float] = None,
+        aPos: Optional[Decimal] = None,
+        bPos: Optional[Decimal] = None,
     ) -> bool:
         """
         Aplicação da equação reduzida da circunferência.
@@ -59,7 +60,7 @@ class Geometry:
                 return Vertex(x=a.x + (s * (b.x - a.x)), y=a.y + (s * (b.y - a.y)))
         return None
 
-    def calculateRelativePoint(self, x: float, segment: Segment) -> Vertex:
+    def calculateRelativePoint(self, x: Decimal, segment: Segment) -> Vertex:
         # o segmento é vertical. Retorna o vértice com o menor "y"!
         if segment.isVertical(self.tolerance) or segment.a.withinTolerance(
             x, self.tolerance
@@ -91,7 +92,7 @@ class Geometry:
         ) + segment.a.y
         return Vertex(x=x, y=y)
 
-    def compare(self, a: float, b: float) -> int:
+    def compare(self, a: Decimal, b: Decimal) -> int:
         if self.smallerThan(a, b):
             return -1
         return 1 if self.greaterThan(a, b) else 0

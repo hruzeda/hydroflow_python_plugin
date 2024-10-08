@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 
 from .models.feature_set import FeatureSet
 from .utils.message import Message
@@ -24,10 +25,10 @@ class MonitorPoint:
                     featureId=feature_id, sharp=sharp
                 )
 
-    def calculate_sharp(self, log: Message) -> list[float]:
-        Ma = float(max(self.fid_shreve_map))
+    def calculate_sharp(self, log: Message) -> list[Decimal]:
+        Ma = Decimal(max(self.fid_shreve_map))
         log.append(f"Ordem da foz: {Ma}")
-        l_sharp: list[float] = []
+        l_sharp: list[Decimal] = []
 
         while len(l_sharp) != self.desired_n_segments:
             T = (Ma + 1) / 2
@@ -39,9 +40,9 @@ class MonitorPoint:
         return l_sharp
 
     def find_candidates(
-        self, l_sharp: list[float], log: Message
-    ) -> dict[float, list[int]]:
-        final_result: dict[float, list[int]] = {}
+        self, l_sharp: list[Decimal], log: Message
+    ) -> dict[Decimal, list[int]]:
+        final_result: dict[Decimal, list[int]] = {}
         for sharp in l_sharp:
             if not self._find_exact_matches(final_result, sharp):
                 self._find_closest_matches(final_result, sharp)
@@ -52,7 +53,7 @@ class MonitorPoint:
         return final_result
 
     def _find_closest_matches(
-        self, final_result: dict[float, list[int]], sharp: float
+        self, final_result: dict[Decimal, list[int]], sharp: Decimal
     ) -> None:
         rounded = round(sharp)
         found = False
@@ -68,7 +69,7 @@ class MonitorPoint:
             dif += 1
 
     def _find_exact_matches(
-        self, final_result: dict[float, list[int]], sharp: float
+        self, final_result: dict[Decimal, list[int]], sharp: Decimal
     ) -> bool:
         rounded = round(sharp)
         found = False

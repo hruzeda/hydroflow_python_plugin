@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from ..utils.geometry import Geometry
@@ -18,14 +19,25 @@ class Position:
         if self.list and indice < len(self.list):
             self.list.pop(indice)
 
-    def locate(self, scanLine: float, segment: Segment) -> int:
-        for i, item in enumerate(self.list):
-            if self.comparePosition(scanLine, segment, item) == 0:
-                return i
+    def locate(self, scanLine: Decimal, segment: Segment) -> int:
+        start = 0
+        end = len(self.list) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = self.list[middle]
+
+            if segment.compareTo(item) == 0:
+                return middle
+            comparison = self.comparePosition(scanLine, segment, item)
+            if comparison < 0:
+                start = middle + 1
+            else:
+                end = middle - 1
+
         return -1
 
     def comparePosition(
-        self, scanLine: float, first: Segment, second: Segment
+        self, scanLine: Decimal, first: Segment, second: Segment
     ) -> int:
         # Calculando os pontos relativos.
         pFirst = self.geo.calculateRelativePoint(scanLine, first)
@@ -35,8 +47,11 @@ class Position:
             # Mesma altura relativa.
 
             # Avaliando os vértices.
-            if first.isPoint(self.geo.tolerance) or second.isPoint(
-                self.geo.tolerance
+            if any(
+                [
+                    first.isPoint(self.geo.tolerance),
+                    second.isPoint(self.geo.tolerance),
+                ]
             ):
                 return first.compareTo(second)
 
@@ -97,31 +112,37 @@ class Position:
         return 0
 
     def insert(self, segment: Segment) -> int:
-        for i, item in enumerate(self.list):
+        start = 0
+        end = len(self.list) - 1
+        while start <= end:
+            middle = (start + end) // 2
+            item = self.list[middle]
             comp = self.comparePosition(segment.a.x, segment, item)
 
-            if comp == 0:
-                return i
-
             if comp < 0:
-                self.list.insert(i, segment)
-                return i
-
-        self.list.append(segment)
-        return len(self.list) - 1
+                if middle == end:
+                    self.list.append(segment)
+                    return len(self.list) - 1
+                start = middle + 1
+            elif comp > 0:
+                if middle == start:
+                    self.list.insert(0, segment)
+                    return 0
+                end = middle - 1
+            else:
+                return middle
+        return -1
 
     def above(self, index: int) -> Optional[Segment]:
         result = None
         if 0 < index < len(self.list):
-            index -= 1
-            result = self.list[index]
+            result = self.list[index - 1]
         return result
 
     def below(self, index: int) -> Optional[Segment]:
         result = None
         if 0 <= index < len(self.list) - 1:
-            index += 1
-            result = self.list[index]
+            result = self.list[index + 1]
         return result
 
     def swap(self, first: int, second: int) -> None:
