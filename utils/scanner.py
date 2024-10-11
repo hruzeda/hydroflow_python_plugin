@@ -85,12 +85,12 @@ class Scanner:
                 break
 
             if comp < 0:
-                if middle <= 0:
+                if middle <= start:
                     break
                 end = middle - 1
 
             else:
-                if middle >= len(self.vertices) - 1:
+                if middle >= end:
                     break
                 start = middle + 1
 
@@ -154,7 +154,7 @@ class Scanner:
 
     def scanLineComparator(self, scanLine: Decimal, vertex: Vertex) -> int:
         if not vertex.withinTolerance(scanLine, self.geo.tolerance):
-            return 1 if self.geo.smallerThan(scanLine, vertex.x) else -1
+            return -1 if self.geo.smallerThan(scanLine, vertex.x) else 1
         return 0
 
     def scanLineComparator2(self, a: ScanLine, b: ScanLine) -> int:
@@ -162,95 +162,81 @@ class Scanner:
             return -1
         if self.geo.smallerThan(b.vertex.x, a.vertex.x):
             return 1
-        if self.geo.equalsTo(aPos=a.vertex.x, bPos=b.vertex.x):
-            if a.eventType == b.eventType:
-                if (
-                    a.segmentA.segmentId == b.segmentA.segmentId
-                    and a.segmentA.featureId == b.segmentA.featureId
-                    and a.segmentA.setId == b.segmentA.setId
-                    and (
-                        (not a.segmentB and not b.segmentB)
-                        or (
-                            a.segmentB
-                            and b.segmentB
-                            and a.segmentB.segmentId == b.segmentB.segmentId
-                            and a.segmentB.featureId == b.segmentB.featureId
-                            and a.segmentB.setId == b.segmentB.setId
-                        )
-                    )
-                ):
-                    return 0
-                if self.geo.smallerThan(a.vertex.y, b.vertex.y):
-                    return -1
-                if self.geo.smallerThan(b.vertex.y, a.vertex.y):
-                    return 1
-                if self.geo.equalsTo(aPos=a.vertex.y, bPos=b.vertex.y):
-                    if self.geo.compareAngles(a.segmentA, b.segmentA) >= 0:
-                        return 1
-                    return -1
-            elif (
-                a.eventType == 0
-                and b.eventType == 1
-                or a.eventType == 0
-                and b.eventType == 2
-                or a.eventType == 2
-                and b.eventType == 1
+        if a.eventType == b.eventType:
+            if all(
+                [
+                    a.segmentA.segmentId == b.segmentA.segmentId,
+                    a.segmentA.featureId == b.segmentA.featureId,
+                    a.segmentA.setId == b.segmentA.setId,
+                    a.segmentB
+                    and b.segmentB
+                    and a.segmentB.segmentId == b.segmentB.segmentId
+                    and a.segmentB.featureId == b.segmentB.featureId
+                    and a.segmentB.setId == b.segmentB.setId,
+                ]
             ):
+                return 0
+            if self.geo.smallerThan(a.vertex.y, b.vertex.y):
                 return -1
-            elif (
-                a.eventType == 1
-                and b.eventType == 0
-                or a.eventType == 1
-                and b.eventType == 2
-                or a.eventType == 2
-                and b.eventType == 0
-            ):
+            if self.geo.smallerThan(b.vertex.y, a.vertex.y):
                 return 1
+            if self.geo.compareAngles(a.segmentA, b.segmentA) >= 0:
+                return 1
+            return -1
+        if (
+            a.eventType == 0
+            and b.eventType == 1
+            or a.eventType == 0
+            and b.eventType == 2
+            or a.eventType == 2
+            and b.eventType == 1
+        ):
+            return -1
+        if (
+            a.eventType == 1
+            and b.eventType == 0
+            or a.eventType == 1
+            and b.eventType == 2
+            or a.eventType == 2
+            and b.eventType == 0
+        ):
+            return 1
         return 0
 
     def scanLineSorter(self, a: ScanLine, b: ScanLine) -> int:
+        if self.geo.smallerThan(b.vertex.x, a.vertex.x):
+            return 1
         if self.geo.equalsTo(aPos=a.vertex.x, bPos=b.vertex.x):
-            # Avaliando o tipo dos eventos
-            if a.eventType == 0 and b.eventType == 0:  # São do mesmo tipo: entrada!
-                # Avaliando altura na linha de varredura (y).
-                return -1 if self.geo.smallerThan(a.vertex.y, b.vertex.y) else 1
-            if a.eventType == 1 and b.eventType == 1:  # São do mesmo tipo: saída!
-                xA = a.segmentA.getSmallerX(self.geo.tolerance)
-                xB = b.segmentA.getSmallerX(self.geo.tolerance)
-                return (
-                    -1 if self.geo.smallerThan(xA, xB) else 1
-                )  # Entra depois, sai depois!
-            if any(
-                [
-                    a.eventType == 1 and b.eventType == 0,
-                    a.eventType == 2 and b.eventType == 1,
-                    a.eventType == 0 and b.eventType == 2,
-                ]
+            if a.eventType == 0 and b.eventType == 0:
+                if self.geo.smallerThan(b.vertex.y, a.vertex.y):
+                    return 1
+            elif a.eventType == 1 and b.eventType == 1:
+                if self.geo.smallerThan(
+                    b.segmentA.getSmallerX(self.geo.tolerance),
+                    a.segmentA.getSmallerX(self.geo.tolerance),
+                ):
+                    return 1
+            elif (
+                a.eventType == 1
+                and b.eventType == 0
+                or a.eventType == 2
+                and b.eventType == 1
+                or a.eventType == 0
+                and b.eventType == 2
             ):
                 return 1
-            if any(
-                [
-                    a.eventType == 0 and b.eventType == 1,
-                    a.eventType == 1 and b.eventType == 2,
-                    a.eventType == 2 and b.eventType == 0,
-                ]
-            ):
-                return -1
-
-            return -1 if a.eventType == b.eventType else 1
-
-        return -1 if self.geo.smallerThan(a.vertex.x, b.vertex.x) else 1
+        return -1
 
     def sortLines(self) -> None:
         self.lines.sort(key=functools.cmp_to_key(self.scanLineSorter), reverse=True)
 
     def createScanPoint(
-        self, ponto: Vertex, segmentoA: Segment, segmentoB: Optional[Segment] = None
+        self, vertex: Vertex, segmentA: Segment, segmentB: Optional[Segment] = None
     ) -> ScanVertex:
-        pontoV = Vertex(x=ponto.x, y=ponto.y)
-        scanPoint = ScanVertex(pontoV, segmentoA)
-        if segmentoB:
-            scanPoint.insertSegment(segmentoB)
+        pontoV = Vertex(x=vertex.x, y=vertex.y)
+        scanPoint = ScanVertex(pontoV, segmentA)
+        if segmentB:
+            scanPoint.insertSegment(segmentB)
         return scanPoint
 
     def scanPointComparator(self, primeiro: Vertex, segundo: Vertex) -> int:

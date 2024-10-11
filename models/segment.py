@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 from .vertex import Vertex
 
@@ -9,7 +8,7 @@ class Segment:
         self,
         segmentId: int,
         featureId: int,
-        setId: Optional[int],
+        setId: int,
         a: Vertex,
         b: Vertex,
     ):
@@ -35,7 +34,7 @@ class Segment:
     def isVertical(self, tolerance: Decimal) -> bool:
         return not self.isPoint(tolerance) and abs(self.a.x - self.b.x) <= tolerance
 
-    def compareTo(self, segment: "Segment") -> int:
+    def compareTo(self, other: "Segment") -> int:
         # Compara dois segmentos
         # Valores de retorno:
         #  1 - se este objeto é menor que o informado.
@@ -46,18 +45,17 @@ class Segment:
         #  2º - idFeicao;
         #  3° - id.
 
-        if self.setId and segment.setId:
-            if self.setId < segment.setId:
-                return -1
-            if self.setId > segment.setId:
-                return 1
-        if self.featureId < segment.featureId:
+        if self.setId < other.setId:
             return -1
-        if self.featureId > segment.featureId:
+        if self.setId > other.setId:
             return 1
-        if self.segmentId < segment.segmentId:
+        if self.featureId < other.featureId:
             return -1
-        if self.segmentId > segment.segmentId:
+        if self.featureId > other.featureId:
+            return 1
+        if self.segmentId < other.segmentId:
+            return -1
+        if self.segmentId > other.segmentId:
             return 1
         return 0
 

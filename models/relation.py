@@ -39,7 +39,7 @@ class Relation:
         destination: Segment,
         relation_type: int,
     ) -> None:
-        newItem = RelationItem(source, destination, relation_type)
+        new_item = RelationItem(source, destination, relation_type)
         target_list = self.items if relation_type == 0 else self.err
 
         start = 0
@@ -47,23 +47,23 @@ class Relation:
         while start <= end:
             middle = (start + end) // 2
             item = target_list[middle]
-            comp = self.comparePosition(newItem, item)
+            comp = self.comparePosition(new_item, item)
 
             if comp < 0:
                 if start in (middle, end):
-                    target_list.insert(middle, newItem)
+                    target_list.insert(middle, new_item)
                     return
                 if start < middle:
                     end = middle - 1
                 else:
-                    target_list.insert(0, newItem)
+                    target_list.insert(0, new_item)
                     return
             elif comp > 0:
                 if middle == len(target_list) - 1:
-                    target_list.append(newItem)
+                    target_list.append(new_item)
                     return
                 if start == end:
-                    target_list.insert(middle, newItem)
+                    target_list.insert(middle, new_item)
                     return
                 start = middle + 1
             else:
@@ -227,7 +227,6 @@ class Relation:
         for i, indexItem in enumerate(self.index):
             if indexItem.featureId != featureId:
                 self.primaryIndex.append(IndexItem(indexItem.featureId, i))
-        self.primaryIndex.sort(key=functools.cmp_to_key(self.compareIndexItems))
 
     def reportUnexpectedRelations(self, log: Message) -> None:
         log.append(

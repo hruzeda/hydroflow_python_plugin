@@ -12,13 +12,6 @@ class Position:
         self.log = log
         self.list: list[Segment] = []
 
-    # def cleanup(self) -> None:
-    #     self.list.clear()
-
-    def delete(self, indice: int) -> None:
-        if self.list and indice < len(self.list):
-            self.list.pop(indice)
-
     def locate(self, scanLine: Decimal, segment: Segment) -> int:
         start = 0
         end = len(self.list) - 1
@@ -70,31 +63,29 @@ class Position:
                     if result == 0:
                         # Tratando o caso 1 (segmentos horizontais). Arbitrei!
                         return self.geo.compare(first.a.x, second.a.x)
-                else:
-                    return self.geo.compare(first.a.y, second.a.y)
+                    return result
+                return self.geo.compare(first.a.y, second.a.y)
 
             # Testando casos 6 e 7.
-            elif (
-                self.geo.equalsTo(pFirst, first.b)
-                and self.geo.equalsTo(first.b, second.b)
-            ) or (
-                self.geo.equalsTo(pFirst, first.b)
-                and not self.geo.equalsTo(pSecond, second.a)
-                and not self.geo.equalsTo(pSecond, second.b)
+            if self.geo.equalsTo(pFirst, first.b) and (
+                self.geo.equalsTo(first.b, second.b)
+                or (
+                    not self.geo.equalsTo(pSecond, second.a)
+                    and not self.geo.equalsTo(pSecond, second.b)
+                )
             ):
                 # Caso 6.
-
-                # Determinando a linha de varredura.
-                if self.geo.greaterThan(first.a.x, second.a.x):
-                    scanLine = first.a.x
-                else:
-                    scanLine = second.a.x
-
-                # Comparando os segmentos.
-                return self.comparePosition(scanLine, first, second)
+                # Determinando a linha de varredura e comparando os segmentos.
+                return self.comparePosition(
+                    first.a.x
+                    if self.geo.greaterThan(first.a.x, second.a.x)
+                    else second.a.x,
+                    first,
+                    second,
+                )
 
             # Tratando o caso 8.
-            elif (
+            if (
                 not self.geo.equalsTo(pFirst, first.a)
                 and not self.geo.equalsTo(pFirst, first.b)
                 and not self.geo.equalsTo(pSecond, second.a)
@@ -104,46 +95,54 @@ class Position:
                 return self.geo.compareAngles(second, first)
 
             # Tratando os casos 4 e 5.
-            else:
-                return self.geo.compareAngles(first, second)
-        else:
-            # Alturas relativas diferentes.
-            return self.geo.compare(pFirst.y, pSecond.y)
-        return 0
+            return self.geo.compareAngles(first, second)
+
+        # Alturas relativas diferentes.
+        return self.geo.compare(pFirst.y, pSecond.y)
 
     def insert(self, segment: Segment) -> int:
+        if not self.list:
+            self.list.append(segment)
+            return 0
+
         start = 0
         end = len(self.list) - 1
-        while start <= end:
+        while True:
             middle = (start + end) // 2
             item = self.list[middle]
             comp = self.comparePosition(segment.a.x, segment, item)
 
             if comp < 0:
                 if middle == end:
-                    self.list.append(segment)
-                    return len(self.list) - 1
+                    if middle == len(self.list) - 1:
+                        self.list.append(segment)
+                        return len(self.list) - 1
+                    self.list.insert(middle + 1, segment)
+                    return middle + 1
                 start = middle + 1
             elif comp > 0:
                 if middle == start:
-                    self.list.insert(0, segment)
-                    return 0
+                    self.list.insert(middle, segment)
+                    return middle
                 end = middle - 1
             else:
                 return middle
-        return -1
+
+    def delete(self, indice: int) -> None:
+        if self.list and indice < len(self.list):
+            self.list.pop(indice)
 
     def above(self, index: int) -> Optional[Segment]:
-        result = None
-        if 0 < index < len(self.list):
-            result = self.list[index - 1]
-        return result
+        if self.list and 0 < index < len(self.list):
+            index -= 1
+            return self.list[index]
+        return None
 
     def below(self, index: int) -> Optional[Segment]:
-        result = None
-        if 0 <= index < len(self.list) - 1:
-            result = self.list[index + 1]
-        return result
+        if self.list and index < len(self.list) - 1:
+            index += 1
+            return self.list[index]
+        return None
 
     def swap(self, first: int, second: int) -> None:
         self.list[first], self.list[second] = self.list[second], self.list[first]
