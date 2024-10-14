@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from .models.feature_set import FeatureSet
@@ -28,13 +29,6 @@ class Classificator:
         self.topologicalRelations = Relation(log)
         self.position = Position(self.geo, log)
         self.log = log
-
-    # def cleanup(self):
-    #     self.log.cleanup()
-    #     self.geo = Geometry(self.params.toleranceXY)
-    #     self.scanner = Scanner(self.geo)
-    #     self.topologicalRelations.cleanup()
-    #     self.position = Position(self.geo, self.log)
 
     def classifyWaterBasin(self) -> int:
         """
@@ -78,14 +72,16 @@ class Classificator:
     def scanPlane(self) -> None:
         scanLine = self.scanner.next()
         if scanLine:
-            previousPoint = scanLine.vertex
+            previousPoint = scanLine.vertex.x
 
         while scanLine is not None:
+            scanLineVertex = scanLine.vertex
+            scanLineCoord = scanLineVertex.x
             record = scanLine.segmentA
 
-            if self.geo.smallerThan(previousPoint.x, scanLine.vertex.x):
+            if self.geo.smallerThan(previousPoint, scanLineCoord):
                 self.processScanPoints(previousPoint)
-                previousPoint = scanLine.vertex
+                previousPoint = scanLineCoord
 
             # Inserir segmento(s) no ponto de varredura.
             self.scanner.addScanPoint(scanLine)
@@ -98,15 +94,15 @@ class Classificator:
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
                 if above:  # Se há segmento acima:
-                    self.evaluateSegments(scanLine.vertex, above, record)
+                    self.evaluateSegments(scanLineVertex, above, record)
 
                 # Verificando segmento imediatamente abaixo.
                 below = self.position.below(index_A)
                 if below:  # Se há segmento abaixo:
-                    self.evaluateSegments(scanLine.vertex, record, below)
+                    self.evaluateSegments(scanLineVertex, record, below)
             elif scanLine.eventType == 1:
                 # Localizando o segmento em Posicao.
-                index_A = self.position.locate(scanLine.vertex.x, record)
+                index_A = self.position.locate(scanLineCoord, record)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
@@ -114,26 +110,28 @@ class Classificator:
                     # Verificando segmento imediatamente abaixo.
                     below = self.position.below(index_A)
                     if below:
-                        self.evaluateSegments(scanLine.vertex, above, below)
+                        self.evaluateSegments(scanLineVertex, above, below)
 
                 # Excluindo de posição.
                 self.position.delete(index_A)
             elif scanLine.eventType == 2:  # Interseção.
                 # Separando interseção por toque.
-                if (
-                    not self.geo.equalsTo(scanLine.vertex, scanLine.segmentA.a)
-                    and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentA.b)
-                    and scanLine.segmentB
-                    and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentB.a)
-                    and not self.geo.equalsTo(scanLine.vertex, scanLine.segmentB.b)
+                if all(
+                    [
+                        not self.geo.equalsTo(scanLineVertex, scanLine.segmentA.a),
+                        not self.geo.equalsTo(scanLineVertex, scanLine.segmentA.b),
+                        scanLine.segmentB
+                        and not self.geo.equalsTo(
+                            scanLineVertex, scanLine.segmentB.a
+                        )
+                        and not self.geo.equalsTo(
+                            scanLineVertex, scanLine.segmentB.b
+                        ),
+                    ]
                 ):
                     # Localizando os segmentos.
-                    index_A = self.position.locate(
-                        scanLine.vertex.x, scanLine.segmentA
-                    )
-                    index_B = self.position.locate(
-                        scanLine.vertex.x, scanLine.segmentB
-                    )
+                    index_A = self.position.locate(scanLineCoord, scanLine.segmentA)
+                    index_B = self.position.locate(scanLineCoord, scanLine.segmentB)
 
                     # Trocando segmentos de posição .
                     self.position.swap(index_A, index_B)
@@ -142,14 +140,14 @@ class Classificator:
                     above = self.position.above(index_A)
                     if above:  # Se há segmento acima:
                         self.evaluateSegments(
-                            scanLine.vertex, above, scanLine.segmentB
+                            scanLineVertex, above, scanLine.segmentB
                         )
 
                     # Verificando segmento imediatamente abaixo.
                     below = self.position.below(index_B)
                     if below:  # Se há segmento abaixo:
                         self.evaluateSegments(
-                            scanLine.vertex, scanLine.segmentA, below
+                            scanLineVertex, scanLine.segmentA, below
                         )
 
             scanLine = self.scanner.next()
@@ -201,11 +199,11 @@ class Classificator:
                         )
                     )
 
-    def processScanPoints(self, previousVertex: Vertex) -> None:
+    def processScanPoints(self, scanLine: Decimal) -> None:
         test = []
 
         # Obtendo o primeiro ponto de varradura.
-        scanVertex = self.scanner.nextInLine(previousVertex.x)
+        scanVertex = self.scanner.nextInLine(scanLine)
         while scanVertex is not None:
             if len(scanVertex.segments) > 1:  # Há relações topológicas.
                 # Testando os segmentos.
@@ -246,7 +244,7 @@ class Classificator:
 
                 test.clear()
 
-            scanVertex = self.scanner.nextInLine(previousVertex.x)
+            scanVertex = self.scanner.nextInLine(scanLine)
 
     def buildTree(self) -> int:
         """

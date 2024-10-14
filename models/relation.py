@@ -131,7 +131,7 @@ class Relation:
     def findChildSegments(
         self, featureId: int, parentFeatureId: int, siblings: list[Segment]
     ) -> list[Segment]:
-        result = set()
+        result = []
 
         # Obtendo o índice primário.
         primaryIndex = self.findPrimaryIndex(featureId)
@@ -164,7 +164,7 @@ class Relation:
                             if relatedSegment.featureId == childSegment.featureId:
                                 isChild = False
                         if isChild:
-                            result.add(relatedSegment)
+                            result.append(relatedSegment)
 
                     primaryIndex += 1
                 else:
@@ -173,26 +173,37 @@ class Relation:
         return list(result)
 
     def comparePosition(self, a: RelationItem, b: RelationItem) -> int:
-        if (
-            a.source.featureId == b.source.featureId
-            and a.destination.featureId == b.destination.featureId
-            and a.relationType == b.relationType
+        if all(
+            [
+                a.source.featureId == b.source.featureId,
+                a.destination.featureId == b.destination.featureId,
+                a.relationType == b.relationType,
+            ]
         ):
             return 0
-        if (
-            a.source.featureId < b.source.featureId
-            or (
+        if any(
+            [
+                a.source.featureId < b.source.featureId,
                 a.source.featureId == b.source.featureId
-                and a.destination.featureId < b.destination.featureId
-            )
-            or (
+                and a.destination.featureId < b.destination.featureId,
                 a.source.featureId == b.source.featureId
                 and a.destination.featureId == b.destination.featureId
-                and a.relationType < b.relationType
-            )
+                and a.relationType < b.relationType,
+            ]
         ):
             return -1
-        return 1
+        if any(
+            [
+                a.source.featureId > b.source.featureId,
+                a.source.featureId == b.source.featureId
+                and a.destination.featureId > b.destination.featureId,
+                a.source.featureId == b.source.featureId
+                and a.destination.featureId == b.destination.featureId
+                and a.relationType > b.relationType,
+            ]
+        ):
+            return 1
+        return 0
 
     def findPrimaryIndex(self, featureId: int) -> int:
         for item in self.primaryIndex:

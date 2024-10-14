@@ -10,9 +10,6 @@ class Message:
         self.result = ""
         self.list: list[str] = []
 
-    # def cleanup(self):
-    #     self.list = []
-
     def append(self, message: str) -> None:
         self.list.append(message)
 

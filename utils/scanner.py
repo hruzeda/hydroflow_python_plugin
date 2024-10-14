@@ -61,14 +61,12 @@ class Scanner:
         self.lines: list[ScanLine] = []
         self.vertices: list[ScanVertex] = []
 
-    # def cleanup(self) -> None:
-    #     self.lines = []
-    #     self.points = []
-
     def next(self) -> Optional[ScanLine]:
+        result = None
         if self.lines:
-            return self.lines.pop()
-        return None
+            result = self.lines[-1]
+            self.lines.pop()
+        return result
 
     def nextInLine(self, scanLine: Decimal) -> Optional[ScanVertex]:
         result = None
@@ -81,7 +79,8 @@ class Scanner:
             comp = self.scanLineComparator(scanLine, item.vertex)
 
             if comp == 0:
-                result = self.vertices.pop(middle)
+                result = self.vertices[middle]
+                self.vertices.pop(middle)
                 break
 
             if comp < 0:

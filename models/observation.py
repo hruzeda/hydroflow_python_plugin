@@ -8,9 +8,6 @@ class Observation:
     def __init__(self) -> None:
         self.list: list[ObservationItem] = []
 
-    # def cleanup(self):
-    #     self.list = []
-
     def get_value(self, featureId: int) -> str:
         for item in self.list:
             if item.featureId == featureId:

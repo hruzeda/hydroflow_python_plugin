@@ -256,7 +256,7 @@ class SHPFeatureSetDAO:
             elif field_type == QVariant.Int:
                 value = str(int(value))
             elif field_type == QVariant.Double:
-                value = str(float(value))
+                value = str(Decimal(value))
             elif field_type == QVariant.Bool:
                 value = str(bool(value))
             elif field_type == QVariant.Date:
