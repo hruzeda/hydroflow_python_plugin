@@ -4,13 +4,14 @@ Created with Plugin Builder.
 
 This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also integrates https://github.com/leonardguedes/MonitorPoint/blob/main/MonitorPointcode.
 
+```
 1 - Janela da Plugin abre com campos para:
- - SHP da drenagem
- - SHP do limite da bacia
- - Tolerância (em pixels) para os cálculos
- - Shreve
- - Strahler
- - Sugestão de pontos para monitoramento
+  - SHP da drenagem
+  - SHP do limite da bacia
+  - Tolerância (em pixels) para os cálculos
+  - Shreve
+  - Strahler
+  - Sugestão de pontos para monitoramento
 
 2 - Abre os arquivos SHP e em cada um:  (SHPFeatureSetDAO.load_feature_set)
   2.1 - Cria uma instância de FeatureSet
@@ -64,7 +65,7 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
     3.3.3 - Iniciando a partir da última scanLine em scanner.list, para cada scanLine:  (Scanner.scanPlane)
       3.3.3.1 - Se a coordenada x de scanLine.vertex for menor que a última processada:
         3.3.3.1.1 - (Scanner.processScanPoints)
-
+```
 
 TODO:
 - A few of our model and utility classes are already covered by PyQT5/PyQT6 and could be replaced
