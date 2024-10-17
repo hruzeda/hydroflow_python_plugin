@@ -114,7 +114,7 @@ class Classificator:
 
                 # Excluindo de posição.
                 self.position.delete(index_A)
-            elif scanLine.eventType == 2:  # Interseção.
+            elif scanLine.eventType == 2 and scanLine.segmentB:  # Interseção.
                 # Separando interseção por toque.
                 if all(
                     [

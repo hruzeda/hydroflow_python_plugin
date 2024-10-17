@@ -204,17 +204,17 @@ class Scanner:
 
     def scanLineSorter(self, a: ScanLine, b: ScanLine) -> int:
         if self.geo.smallerThan(b.vertex.x, a.vertex.x):
-            return 1
+            return -1
         if self.geo.equalsTo(aPos=a.vertex.x, bPos=b.vertex.x):
             if a.eventType == 0 and b.eventType == 0:
                 if self.geo.smallerThan(b.vertex.y, a.vertex.y):
-                    return 1
+                    return -1
             elif a.eventType == 1 and b.eventType == 1:
                 if self.geo.smallerThan(
                     b.segmentA.getSmallerX(self.geo.tolerance),
                     a.segmentA.getSmallerX(self.geo.tolerance),
                 ):
-                    return 1
+                    return -1
             elif (
                 a.eventType == 1
                 and b.eventType == 0
@@ -223,11 +223,11 @@ class Scanner:
                 or a.eventType == 0
                 and b.eventType == 2
             ):
-                return 1
-        return -1
+                return -1
+        return 1
 
     def sortLines(self) -> None:
-        self.lines.sort(key=functools.cmp_to_key(self.scanLineSorter), reverse=True)
+        self.lines.sort(key=functools.cmp_to_key(self.scanLineSorter))
 
     def createScanPoint(
         self, vertex: Vertex, segmentA: Segment, segmentB: Optional[Segment] = None
@@ -286,5 +286,3 @@ class Scanner:
                     self.vertices.insert(middle + 1, scanPoint)
                     return
                 start = middle + 1
-
-        self.vertices.append(scanPoint)

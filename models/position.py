@@ -134,14 +134,12 @@ class Position:
 
     def above(self, index: int) -> Optional[Segment]:
         if self.list and 0 < index < len(self.list):
-            index -= 1
-            return self.list[index]
+            return self.list[index - 1]
         return None
 
     def below(self, index: int) -> Optional[Segment]:
         if self.list and index < len(self.list) - 1:
-            index += 1
-            return self.list[index]
+            return self.list[index + 1]
         return None
 
     def swap(self, first: int, second: int) -> None:
