@@ -365,71 +365,20 @@ class Classificator:
                     # Classificando por Shreve.
                     if self.params.shreveOrderEnabled:
                         node.shreve = 1
-                elif (
-                    len(childSegments) == 1
-                ):  # Fazer classificação do pai igual a do filho.
-                    # Processando o filho único.
+
+                if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
+                    # Gravando a mensagem de mais de três afluentes no log.
+                    self._log_too_many_children(segment, childSegments)
+
+                # Cadastrando os nós filhos.
+                for child in childSegments:
                     result, childNode = self.createNodes(
-                        childSegments[0], segment, childSegments, result
+                        child, segment, childSegments, result
                     )
-
                     if result == 0 and childNode:
+                        # As regras para a classificação por Strahler e Shreve
+                        # estão no método No::inserirFilhoNo().
                         node.addChild(childNode)
-
-                        # Classificando por Strahler.
-                        # TODO: Passar essa lógica para No::inserirFilhoNo()!
-                        if self.params.strahlerOrderType > 0:
-                            node.strahler = childNode.strahler
-
-                        # Classificando por Shreve.
-                        # TODO: Passar essa lógica para No::inserirFilhoNo()!
-                        if self.params.shreveOrderEnabled:
-                            node.shreve = childNode.shreve
-                else:  # Nó com dois ou mais filhos.
-                    if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
-                        # Gravando a mensagem de mais de três afluentes no log.
-                        msg_1 = (
-                            "Aviso! Estrutura topológica não esperada para "
-                            "hierarquização Strahler."
-                        )
-                        msg_2 = " A Feição FID"
-                        msg_3 = " recebe mais de dois afluentes em um mesmo ponto."
-                        msg_4 = "Os identificadores desses afluentes são:"
-                        msg_5 = (
-                            "O resultado final apresentará a classificação "
-                            "por Strahler relaxado."
-                        )
-                        self.log.append(
-                            msg_1
-                            + msg_2
-                            + str(segment.originalFeatureId)
-                            + msg_3
-                            + "\n"
-                            + msg_4
-                        )
-
-                        # Listando os filhos.
-                        for i, child in enumerate(childSegments):
-                            self.log.append(
-                                "   "
-                                + str(i + 1)
-                                + " - FID"
-                                + str(child.originalFeatureId)
-                            )
-                        self.log.append("\n" + msg_5)
-
-                        # Configurando a classificação Strahler leve.
-                        self.params.strahlerOrderType = 2
-
-                    # Cadastrando os nós filhos.
-                    for child in childSegments:
-                        result, childNode = self.createNodes(
-                            child, segment, childSegments, result
-                        )
-                        if result == 0 and childNode:
-                            # As regras para a classificação por Strahler e Shreve
-                            # estão no método No::inserirFilhoNo().
-                            node.addChild(childNode)
 
                 # Gravando classificação.
                 if result == 0:
@@ -477,12 +426,23 @@ class Classificator:
 
         return result, node
 
+    def _log_too_many_children(
+        self, segment: Segment, childSegments: list[Segment]
+    ) -> None:
+        self.log.append(
+            "Aviso! Estrutura topológica não esperada para "
+            "hierarquização Strahler. "
+            f"A Feição FID{segment.originalFeatureId} "
+            "recebe mais de dois afluentes em um mesmo ponto.\n"
+            "Os identificadores desses afluentes são:"
+        )
+
+        # Listando os filhos.
+        for i, child in enumerate(childSegments):
+            self.log.append(f"   {i + 1} - FID{child.originalFeatureId}")
+
     def evaluateProcessing(self) -> int:
         result = 0
-        msg_0 = ""
-        msg_1 = "Aviso: a feição FID"
-        msg_2 = " não foi processada. Confira a topologia da rede de drenagem."
-        msg_3 = "Feicao nao processada."
 
         for i in range(self.drainage.getTotalFeatures()):
             feature = self.drainage.getFeature(i)
@@ -491,9 +451,13 @@ class Classificator:
                 or (self.params.strahlerOrderType > 0 and feature.strahler == 0)
                 or (self.params.shreveOrderEnabled and feature.shreve == 0)
             ):
-                msg_0 = msg_1 + str(feature.originalFeatureId) + msg_2
-                self.log.append(msg_0)
-                self.drainage.obs.set_value(feature.originalFeatureId, msg_3)
+                self.log.append(
+                    f"Aviso: a feição FID{feature.originalFeatureId} "
+                    "não foi processada. Confira a topologia da rede de drenagem."
+                )
+                self.drainage.obs.set_value(
+                    feature.originalFeatureId, "Feicao nao processada."
+                )
                 feature.hasObservation = True
                 result = 1
 

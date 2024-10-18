@@ -347,19 +347,7 @@ class SHPFeatureSetDAO:
         copy = QgsFeature(fields, featureId)
 
         # Set the geometry of the feature
-        if feature.flow == 2:
-            parts = self._get_raw_parts(feature.geometry)
-            inverted = parts[::-1]
-            if isinstance(inverted[0], list):
-                for i, part in enumerate(inverted):
-                    inverted[i] = part[::-1]
-                geometry = QgsGeometry.fromMultiPolylineXY(inverted)
-            else:
-                geometry = QgsGeometry.fromPolylineXY(inverted)
-        else:
-            geometry = feature.geometry
-
-        copy.setGeometry(geometry)
+        copy.setGeometry(self._check_geometry_flow(feature))
 
         # Set the attributes
         if attributes and len(attributes) > 0:
@@ -383,6 +371,18 @@ class SHPFeatureSetDAO:
             copy.setAttribute("Sharp", feature.sharp)
 
         writer.addFeature(copy)
+
+    def _check_geometry_flow(self, feature: Feature) -> QgsGeometry:
+        if feature.flow == 2:
+            rings_or_lines = self._get_raw_parts(feature.geometry)
+            inverted = rings_or_lines[::-1]
+            if isinstance(inverted[0], list):
+                inverted_parts = []
+                for part in enumerate(inverted):
+                    inverted_parts.append(part[::-1])
+                return QgsGeometry.fromMultiPolylineXY(inverted_parts)
+            return QgsGeometry.fromPolylineXY(inverted)
+        return feature.geometry
 
     def save_feature_set(
         self, feature_set: FeatureSet, params: Params, log: Message
