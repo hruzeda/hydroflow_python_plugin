@@ -43,10 +43,9 @@ class FeatureSet:
         shreve: Optional[int] = None,
         sharp: Optional[Decimal] = None,
     ) -> None:
-        if featureId < len(self.featuresList):
-            feature = self.featuresList[featureId]
-        else:
-            feature = self.newFeaturesList[featureId - len(self.featuresList)]
+        feature = self.getFeature(featureId)
+        if not feature:
+            return
 
         if flow:
             feature.flow = flow

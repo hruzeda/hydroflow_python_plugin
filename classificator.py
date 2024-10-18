@@ -100,6 +100,7 @@ class Classificator:
                 below = self.position.below(index_A)
                 if below:  # Se há segmento abaixo:
                     self.evaluateSegments(scanLineVertex, record, below)
+
             elif scanLine.eventType == 1:
                 # Localizando o segmento em Posicao.
                 index_A = self.position.locate(scanLineCoord, record)
@@ -114,6 +115,7 @@ class Classificator:
 
                 # Excluindo de posição.
                 self.position.delete(index_A)
+
             elif scanLine.eventType == 2 and scanLine.segmentB:  # Interseção.
                 # Separando interseção por toque.
                 if all(
@@ -308,14 +310,14 @@ class Classificator:
                 # Verificando se a feição da foz já foi processada.
                 if currentFeature.mouthFeatureId < 0:
                     # Árvore ainda não processada.
-                    currentFeature.mouthFeatureId = currentFeature.featureId
+                    currentFeature.mouthFeatureId = currentFeature.originalFeatureId
                 else:
                     # Árvore já processada. Existe interconexão entre bacias!
                     basinConnection = True
             else:
                 parentFeature = self.drainage.getFeature(parent.featureId)
                 if parentFeature and currentFeature.mouthFeatureId < 0:
-                    currentFeature.mouthFeatureId = parentFeature.mouthFeatureId
+                    currentFeature.mouthFeatureId = parentFeature.originalFeatureId
                 else:
                     # Feição já processada. Existe um loop na árvore!
                     loopBasin = True
@@ -345,8 +347,8 @@ class Classificator:
 
                 # Obtendo os filhos.
                 childSegments = self.topologicalRelations.findChildSegments(
-                    segment.featureId,
-                    -1 if parent.setId == 1 else parent.featureId,
+                    segment.originalFeatureId,
+                    -1 if parent.setId == 1 else parent.originalFeatureId,
                     sibling_nodes,
                 )
 
@@ -400,7 +402,7 @@ class Classificator:
                         self.log.append(
                             msg_1
                             + msg_2
-                            + str(segment.featureId)
+                            + str(segment.originalFeatureId)
                             + msg_3
                             + "\n"
                             + msg_4
@@ -409,7 +411,10 @@ class Classificator:
                         # Listando os filhos.
                         for i, child in enumerate(childSegments):
                             self.log.append(
-                                "   " + str(i + 1) + " - FID" + str(child.featureId)
+                                "   "
+                                + str(i + 1)
+                                + " - FID"
+                                + str(child.originalFeatureId)
                             )
                         self.log.append("\n" + msg_5)
 
@@ -445,9 +450,9 @@ class Classificator:
                     msg_2 = " Existem feições em anel (loop)."
                     msg_4 = (
                         "Verifique as feições: FID"
-                        + str(segment.featureId)
+                        + str(segment.originalFeatureId)
                         + " e FID"
-                        + str(parent.featureId)
+                        + str(parent.originalFeatureId)
                         + "."
                     )
                     # Gravando o erro no log.
@@ -462,7 +467,7 @@ class Classificator:
                     self.log.append(
                         msg_1
                         + msg_2
-                        + str(currentFeature.featureId)
+                        + str(currentFeature.originalFeatureId)
                         + msg_3
                         + str(currentFeature.mouthFeatureId)
                         + msg_4
@@ -486,9 +491,9 @@ class Classificator:
                 or (self.params.strahlerOrderType > 0 and feature.strahler == 0)
                 or (self.params.shreveOrderEnabled and feature.shreve == 0)
             ):
-                msg_0 = msg_1 + str(feature.featureId) + msg_2
+                msg_0 = msg_1 + str(feature.originalFeatureId) + msg_2
                 self.log.append(msg_0)
-                self.drainage.obs.set_value(feature.featureId, msg_3)
+                self.drainage.obs.set_value(feature.originalFeatureId, msg_3)
                 feature.hasObservation = True
                 result = 1
 

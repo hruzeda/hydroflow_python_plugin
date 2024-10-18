@@ -165,12 +165,12 @@ class Scanner:
             if all(
                 [
                     a.segmentA.segmentId == b.segmentA.segmentId,
-                    a.segmentA.featureId == b.segmentA.featureId,
+                    a.segmentA.originalFeatureId == b.segmentA.originalFeatureId,
                     a.segmentA.setId == b.segmentA.setId,
                     a.segmentB
                     and b.segmentB
                     and a.segmentB.segmentId == b.segmentB.segmentId
-                    and a.segmentB.featureId == b.segmentB.featureId
+                    and a.segmentB.originalFeatureId == b.segmentB.originalFeatureId
                     and a.segmentB.setId == b.segmentB.setId,
                 ]
             ):

@@ -77,7 +77,7 @@ class SHPFeatureSetDAO:
 
             else:
                 self._parse_single_part_feature(
-                    feature_set, qgs_feature, geometry, shape_type, obs
+                    feature_set, geometry, shape_type, obs
                 )
 
         # Cadastrando demais atributos da figura.
@@ -101,8 +101,12 @@ class SHPFeatureSetDAO:
         for part_id, rings_or_lines in enumerate(parts):
             new_feature = part_id > 0
             feature = Feature(
+                geometry=QgsGeometry.fromMultiPolylineXY(rings_or_lines)
+                if isinstance(rings_or_lines[0], list)
+                else QgsGeometry.fromPolylineXY(rings_or_lines),
                 featureId=new_feature_id if new_feature else feature_id,
                 setId=shape_type,
+                originalFeatureId=feature_id,
                 featureType=geometry.wkbType(),
             )
 
@@ -135,14 +139,14 @@ class SHPFeatureSetDAO:
                 new_feature_id += 1
 
     def _get_raw_parts(self, geometry: QgsGeometry) -> list[Any]:
-        parts = (
-            geometry.asMultiPolyline()
-            if geometry.wkbType() == QgsWkbTypes.MultiLineString
+        if (
+            geometry.wkbType() == QgsWkbTypes.MultiLineString
             or QgsWkbTypes.flatType(geometry.wkbType()) == QgsWkbTypes.LineGeometry
-            else geometry.asMultiPolygon()
-        )
-
-        return list(parts)
+        ):
+            return list(geometry.asMultiPolyline())
+        if geometry.wkbType() == QgsWkbTypes.MultiPolygon:
+            return list(geometry.asMultiPolygon())
+        return list(geometry.asPolyline())
 
     def _parse_vertices(self, rings_or_lines: list[Any]) -> list[Vertex]:
         vertex_list = []
@@ -185,6 +189,7 @@ class SHPFeatureSetDAO:
                 Segment(
                     segmentId=len(segments_list),
                     featureId=feature.featureId,
+                    originalFeatureId=feature.originalFeatureId,
                     setId=shape_type,
                     a=start,
                     b=end,
@@ -196,7 +201,6 @@ class SHPFeatureSetDAO:
     def _parse_single_part_feature(
         self,
         feature_set: FeatureSet,
-        qgs_feature: QgsFeature,
         geometry: QgsGeometry,
         shape_type: int,
         obs: Observation,
@@ -208,34 +212,44 @@ class SHPFeatureSetDAO:
         )
         if len(vertex_list) == 1:
             feature = Feature(
-                featureId=qgs_feature.id(),
-                setId=shape_type or -1,
+                geometry,
+                featureId=0,
+                setId=shape_type,
+                originalFeatureId=0,
                 featureType=geometry.wkbType(),
                 vertexList=vertex_list,
             )
+
             feature.segmentsList = [
                 Segment(  # Montando um segmento degenerado!
                     segmentId=0,
-                    featureId=feature.featureId,
+                    featureId=0,
+                    originalFeatureId=0,
                     setId=shape_type,
                     a=vertex_list[0],
                     b=vertex_list[0],
                 )
             ]
+
             if shape_type == 0:  # É bacia. Não processar o elemento!
                 feature.process = False
                 feature.hasObservation = True
-                obs.set_value(qgs_feature.id(), self.msg_3)
+                obs.set_value(0, self.msg_3)
+
         else:  # Não tem vertices! Situação de erro do ShapeFile.
             feature = Feature(
-                featureId=qgs_feature.id(),
-                setId=shape_type or -1,
+                geometry,
+                featureId=0,
+                setId=shape_type,
+                originalFeatureId=0,
                 featureType=geometry.wkbType(),
                 vertexList=vertex_list,
             )
             feature.process = False
             feature.hasObservation = True
-            obs.set_value(qgs_feature.id(), self.msg_3)
+
+            obs.set_value(0, self.msg_3)
+
         feature_set.featuresList.append(feature)
 
     # Function to read attributes from a QgsVectorLayer feature
@@ -321,6 +335,7 @@ class SHPFeatureSetDAO:
 
     def copy_feature(
         self,
+        featureId: int,
         feature: Feature,
         qgs_feature: QgsFeature,
         writer: QgsVectorFileWriter,
@@ -329,10 +344,22 @@ class SHPFeatureSetDAO:
         attributes: Optional[list[Attribute]],
     ) -> None:
         # Create a new feature
-        copy = QgsFeature(fields, feature.featureId)
+        copy = QgsFeature(fields, featureId)
 
         # Set the geometry of the feature
-        copy.setGeometry(qgs_feature.geometry())
+        if feature.flow == 2:
+            parts = self._get_raw_parts(feature.geometry)
+            inverted = parts[::-1]
+            if isinstance(inverted[0], list):
+                for i, part in enumerate(inverted):
+                    inverted[i] = part[::-1]
+                geometry = QgsGeometry.fromMultiPolylineXY(inverted)
+            else:
+                geometry = QgsGeometry.fromPolylineXY(inverted)
+        else:
+            geometry = feature.geometry
+
+        copy.setGeometry(geometry)
 
         # Set the attributes
         if attributes and len(attributes) > 0:
@@ -371,8 +398,10 @@ class SHPFeatureSetDAO:
             return
 
         # Gravando os registros já existentes no shapefile original.
+        featureCount = 0
         for feature in feature_set.featuresList:
             self.copy_feature(
+                featureCount,
                 feature,
                 feature_set.raw.getFeature(feature.featureId),
                 writer,
@@ -380,17 +409,21 @@ class SHPFeatureSetDAO:
                 params,
                 None,
             )
+            featureCount += 1
 
-        # Gravando os novos registros criados.
-        for feature in feature_set.newFeaturesList:
-            self.copy_feature(
-                feature,
-                feature_set.raw.getFeature(feature.featureId),
-                writer,
-                fields,
-                params,
-                feature_set.getNewFeatureAttributes(feature.featureId),
-            )
+            # Gravando os novos registros criados.
+            for new_feature in feature_set.newFeaturesList:
+                if new_feature.originalFeatureId == feature.featureId:
+                    self.copy_feature(
+                        featureCount,
+                        new_feature,
+                        feature_set.raw.getFeature(feature.originalFeatureId),
+                        writer,
+                        fields,
+                        params,
+                        feature_set.getNewFeatureAttributes(feature.featureId),
+                    )
+                    featureCount += 1
 
         del writer
 

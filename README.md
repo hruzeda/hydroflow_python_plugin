@@ -90,7 +90,7 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
                     cuja coordenada X esteja dentro da tolerância definida:
 
           3.3.3.1.1.1 - Para cada segmento:
-            3.3.3.1.1.1.1 - Adiciona no array test:
+            3.3.3.1.1.1.1 - Adiciona no array test o resultado do teste:
                             scanVertex.vertex == segment.a and
                             (segment.a.isExtremity() or segment.setId == 1)
                             or
@@ -101,9 +101,11 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
             3.3.3.1.1.2.1 - Se test for verdadeiro em ambas as posições:
               3.3.3.1.1.2.2.1 - Adiciona uma instância de Relation de tipo 0 (encosta) em
                                 Classificator.topologicalRelations com ambos os segmentos
+
             3.3.3.1.1.2.2 - Se test for verdadeiro em uma das posições apenas:
               3.3.3.1.1.2.2.1 - Adiciona uma instância de Relation de tipo 1 (toca) em
                                 Classificator.topologicalRelations com ambos os segmentos
+
             3.3.3.1.1.2.3 - Se test for verdadeiro em uma das posições apenas:
               3.3.3.1.1.2.3.1 - Adiciona uma instância de Relation de tipo 2 (intercepta) em
                                 Classificator.topologicalRelations com ambos os segmentos
@@ -116,13 +118,23 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
                     em Classificator.position
 
         3.3.3.3.2 - Se há um segmento na posição imediatamente anterior, ou imediatamente seguinte
-                    ao recém inserido (3.3.3.3.1) na lista de Classification.position:
-          3.3.3.3.2.1 - Se os segmentos se interseccionam e a intersecção ocorre em uma das
-                        extremidade de ambos:
+                    ao recém inserido (3.3.3.3.1) na lista de Classificator.position:
+          3.3.3.3.2.1 - Se o dado segmento e o inserido se interseccionam e a intersecção ocorre
+                        em uma das extremidade de ambos:
             3.3.3.3.2.1.1 - Adiciona um novo ScanLine na lista de Scanner com ambos os segmentos
                             e eventType = 2 (intersecção)
 
-      3.3.3.3 - Se scanLine.eventType == 1:
+      3.3.3.4 - Se scanLine.eventType == 1:
+        3.3.3.4.1 - Procura o membro de Classificator.position para o segmento de scanLine
+        3.3.3.4.2 - Se há um segmento na posição imediatamente anterior e um na imediatamente seguinte
+                    ao recuperado (3.3.3.4.1) na lista de Classificator.position:
+          3.3.3.4.2.1 - Se o dado anterior e o seguinte se interseccionam e a intersecção ocorre
+                        em uma das extremidade de ambos:
+            3.3.3.4.2.1.1 - Adiciona um novo ScanLine na lista de Scanner com ambos os segmentos
+                            e eventType = 2 (intersecção)
+        3.3.3.4.3 - Exclui o membro encontrado de Classificator.position
+
+      3.3.3.5 - Se scanLine.eventType == 2:
 
 ```
 

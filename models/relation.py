@@ -100,7 +100,7 @@ class Relation:
         2 - Intercepta
         """
         # Garantindo que o FID do primeiro segmento seja menor que o FID do segundo.
-        if destination.featureId < source.featureId:
+        if destination.originalFeatureId < source.originalFeatureId:
             source, destination = destination, source
 
         # Verificando se é relação entre foz e limite.
@@ -110,7 +110,7 @@ class Relation:
 
         # Verificando se os segmenos são de feições diferentes da bacia.
         elif (
-            source.featureId != destination.featureId
+            source.originalFeatureId != destination.originalFeatureId
             and source.setId == 0
             and destination.setId == 0
         ):
@@ -148,20 +148,24 @@ class Relation:
 
                     relatedSegment = None
                     if (
-                        eventItem.source.featureId == featureId
-                        and eventItem.destination.featureId != parentFeatureId
+                        eventItem.source.originalFeatureId == featureId
+                        and eventItem.destination.originalFeatureId
+                        != parentFeatureId
                     ):
                         relatedSegment = eventItem.destination
                     elif (
-                        eventItem.destination.featureId == featureId
-                        and eventItem.source.featureId != parentFeatureId
+                        eventItem.destination.originalFeatureId == featureId
+                        and eventItem.source.originalFeatureId != parentFeatureId
                     ):
                         relatedSegment = eventItem.source
 
                     if relatedSegment:
                         isChild = True
                         for childSegment in siblings:
-                            if relatedSegment.featureId == childSegment.featureId:
+                            if (
+                                relatedSegment.originalFeatureId
+                                == childSegment.originalFeatureId
+                            ):
                                 isChild = False
                         if isChild:
                             result.append(relatedSegment)
@@ -175,30 +179,34 @@ class Relation:
     def comparePosition(self, a: RelationItem, b: RelationItem) -> int:
         if all(
             [
-                a.source.featureId == b.source.featureId,
-                a.destination.featureId == b.destination.featureId,
+                a.source.originalFeatureId == b.source.originalFeatureId,
+                a.destination.originalFeatureId == b.destination.originalFeatureId,
                 a.relationType == b.relationType,
             ]
         ):
             return 0
         if any(
             [
-                a.source.featureId < b.source.featureId,
-                a.source.featureId == b.source.featureId
-                and a.destination.featureId < b.destination.featureId,
-                a.source.featureId == b.source.featureId
-                and a.destination.featureId == b.destination.featureId
+                a.source.originalFeatureId < b.source.originalFeatureId,
+                a.source.originalFeatureId == b.source.originalFeatureId
+                and a.destination.originalFeatureId
+                < b.destination.originalFeatureId,
+                a.source.originalFeatureId == b.source.originalFeatureId
+                and a.destination.originalFeatureId
+                == b.destination.originalFeatureId
                 and a.relationType < b.relationType,
             ]
         ):
             return -1
         if any(
             [
-                a.source.featureId > b.source.featureId,
-                a.source.featureId == b.source.featureId
-                and a.destination.featureId > b.destination.featureId,
-                a.source.featureId == b.source.featureId
-                and a.destination.featureId == b.destination.featureId
+                a.source.originalFeatureId > b.source.originalFeatureId,
+                a.source.originalFeatureId == b.source.originalFeatureId
+                and a.destination.originalFeatureId
+                > b.destination.originalFeatureId,
+                a.source.originalFeatureId == b.source.originalFeatureId
+                and a.destination.originalFeatureId
+                == b.destination.originalFeatureId
                 and a.relationType > b.relationType,
             ]
         ):
@@ -225,8 +233,8 @@ class Relation:
         eventItem = None
         for i, eventItem in enumerate(self.items):
             # Verificando se são ocorrências de bacia.
-            self.index.append(IndexItem(eventItem.source.featureId, i))
-            self.index.append(IndexItem(eventItem.destination.featureId, i))
+            self.index.append(IndexItem(eventItem.source.originalFeatureId, i))
+            self.index.append(IndexItem(eventItem.destination.originalFeatureId, i))
 
         # Ordenando o índice principal.
         self.index.sort(key=functools.cmp_to_key(self.compareIndexItems))
@@ -237,7 +245,8 @@ class Relation:
         indexItem = None
         for i, indexItem in enumerate(self.index):
             if indexItem.featureId != featureId:
-                self.primaryIndex.append(IndexItem(indexItem.featureId, i))
+                featureId = indexItem.featureId
+                self.primaryIndex.append(IndexItem(featureId, i))
 
     def reportUnexpectedRelations(self, log: Message) -> None:
         log.append(
@@ -250,13 +259,13 @@ class Relation:
         if self.err:
             for item in self.err:
                 log.append(
-                    f"    - FID{str(item.source.featureId)}"
+                    f"    - FID{str(item.source.originalFeatureId)}"
                     + (
                         " toca em FID"
                         if item.relationType == 1
                         else " intercepta FID"
                     )
-                    + f"{item.destination.featureId}"
+                    + f"{item.destination.originalFeatureId}"
                 )
             log.append(f"    Total de relações: {str(len(self.err))}.\n")
             log.append(
