@@ -58,7 +58,7 @@ class Position:
                 # Primeiro entrando ou saindo.
 
                 # Tratando os casos 1 e 2.
-                if self.geo.equalsTo(aPos=first.a.y, bPos=second.a.y):
+                if self.geo.posEqualsTo(first.a.y, second.a.y):
                     result = self.geo.compareAngles(first, second)
                     if result == 0:
                         # Tratando o caso 1 (segmentos horizontais). Arbitrei!

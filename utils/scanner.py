@@ -205,7 +205,7 @@ class Scanner:
     def scanLineSorter(self, a: ScanLine, b: ScanLine) -> int:
         if self.geo.smallerThan(b.vertex.x, a.vertex.x):
             return -1
-        if self.geo.equalsTo(aPos=a.vertex.x, bPos=b.vertex.x):
+        if self.geo.posEqualsTo(a.vertex.x, b.vertex.x):
             if a.eventType == 0 and b.eventType == 0:
                 if self.geo.smallerThan(b.vertex.y, a.vertex.y):
                     return -1
@@ -239,10 +239,10 @@ class Scanner:
         return scanPoint
 
     def scanPointComparator(self, primeiro: Vertex, segundo: Vertex) -> int:
-        if self.geo.equalsTo(a=primeiro, b=segundo):
+        if self.geo.equalsTo(primeiro, segundo):
             return 0
 
-        if self.geo.equalsTo(aPos=primeiro.x, bPos=segundo.x):
+        if self.geo.posEqualsTo(primeiro.x, segundo.x):
             if self.geo.smallerThan(primeiro.y, segundo.y):
                 return -1
             return 1  # y do primeiro > y do segundo.

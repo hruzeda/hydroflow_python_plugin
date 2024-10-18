@@ -16,13 +16,7 @@ class Geometry:
     def greaterThan(self, a: Decimal, b: Decimal) -> bool:
         return a - self.tolerance > b
 
-    def equalsTo(
-        self,
-        a: Optional[Vertex] = None,
-        b: Optional[Vertex] = None,
-        aPos: Optional[Decimal] = None,
-        bPos: Optional[Decimal] = None,
-    ) -> bool:
+    def equalsTo(self, a: Vertex, b: Vertex) -> bool:
         """
         Aplicação da equação reduzida da circunferência.
         Considerções:
@@ -32,11 +26,10 @@ class Geometry:
              Verdadeiro se o vertice "b" está contido na circunferência com centro
              no vertice "a" e raio igual a tolerância.
         """
-        if a and b:
-            return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) <= self.tolerance
-        if aPos and bPos:
-            return abs(aPos - bPos) <= self.tolerance
-        return False
+        return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2)) <= self.tolerance
+
+    def posEqualsTo(self, a: Decimal, b: Decimal) -> bool:
+        return abs(b - a) <= self.tolerance
 
     def intersection(self, primeiro: Segment, segundo: Segment) -> Optional[Vertex]:
         """
