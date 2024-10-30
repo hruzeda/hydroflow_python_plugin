@@ -86,13 +86,6 @@ class Geometry:
         return 1 if self.greaterThan(a, b) else 0
 
     def compareAngles(self, first: Segment, second: Segment) -> int:
-        """
-        Compara o ângulo inclinação dos segmentos.
-        Resposta:
-                 -1 o ângulo do primeiro é menor que o ângulo do segundo segmento
-                  0 o ângulo do primeiro é igual ao ângulo do segundo segmento
-                  1 o ângulo do primeiro é maior que o ângulo do segundo segmento
-        """
         a = self.subtract(first.b, first.a)
         b = self.subtract(second.b, second.a)
 
@@ -104,7 +97,4 @@ class Geometry:
         return -1 if comp > 0 else 0
 
     def subtract(self, a: Vertex, b: Vertex) -> Vertex:
-        """
-        Subtrai das coordenadas de "a" as coordenadas de "b".
-        """
         return Vertex(x=a.x - b.x, y=a.y - b.y)

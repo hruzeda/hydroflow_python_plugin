@@ -13,6 +13,7 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
   - Strahler
   - Sugestão de pontos para monitoramento
 
+
 # SHPFeatureSetDAO.load_feature_set
 2 - Abre os arquivos SHP e em cada um:
   2.1 - Cria uma instância de FeatureSet
@@ -34,6 +35,9 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
         2.2.4.4.1 - Obtém o Vertex seguinte e cria um Segment composto pelos dois
 
       2.2.4.5 - Salva ambas as listas na instância de Feature (2.3.3.1)
+
+    2.2.5 - Insere a Feature no FeatureSet (2.1)
+
 
 # Controller.classifyWaterBasin
 3 - Inicia a classificação
@@ -61,12 +65,12 @@ This a fork/rewrite of https://github.com/sistemalabgis/hydroflow that also inte
                     em Scanner.list
 
     3.3.2 - Ordena as instâncias de ScanLine criadas (3.3.1.1.1 e 3.3.1.1.2) a partir de:
-      3.3.2.1 - A coordenada x de scanLine.vertex
-      3.3.2.2 - scanLine.eventType = 0 + a coordenada y de scanLine.vertex
-      3.3.2.3 - scanLine.eventType = 1 + a menor coordenada x dentre os vértices de scanline.segmentA
-      3.3.2.4 - a.eventType == 1 + b.eventType == 0 ou
-      3.3.2.5 - a.eventType == 2 + b.eventType == 1 ou
-      3.3.2.6 - a.eventType == 0 + b.eventType == 2
+            - A coordenada x de scanLine.vertex
+            - scanLine.eventType = 0 + a coordenada y de scanLine.vertex
+            - scanLine.eventType = 1 + a menor coordenada x dentre os vértices de scanline.segmentA
+            - a.eventType == 1 + b.eventType == 0 ou
+              a.eventType == 2 + b.eventType == 1 ou
+              a.eventType == 0 + b.eventType == 2
 
     # Classificator.scanPlane
     3.3.3 - Iniciando a partir da última scanLine em scanner.list, para cada scanLine:

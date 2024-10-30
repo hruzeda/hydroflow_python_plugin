@@ -1,3 +1,4 @@
+import os
 import shutil
 from decimal import Decimal
 from pathlib import Path
@@ -16,6 +17,7 @@ from qgis.core import (
     QgsProperty,
     QgsRuleBasedLabeling,
     QgsRuleBasedRenderer,
+    QgsSimpleFillSymbolLayer,
     QgsSymbolLayer,
     QgsTextBufferSettings,
     QgsTextFormat,
@@ -432,21 +434,36 @@ class SHPFeatureSetDAO:
 
         new_layer = QgsVectorLayer(params.newFileName, "Hydroflow Results", "ogr")
         self._set_layer_style(new_layer)
+
         QgsProject.instance().addMapLayer(new_layer)
+
         self._set_label_rules(new_layer)
         new_layer.triggerRepaint()
 
     def _set_layer_style(self, layer: QgsVectorLayer) -> None:
         base_width = 0.25
+
+        # Set up fill and border
         symbol = QgsLineSymbol.createSimple({"color": "blue"})
-        symbol.symbolLayer(0).setDataDefinedProperty(
+
+        fill_layer = QgsSimpleFillSymbolLayer()
+        fill_layer.setColor(QColor("blue"))
+        fill_layer.setDataDefinedProperty(
             QgsSymbolLayer.PropertyStrokeColor,
             QgsProperty.fromExpression("if(\"Sharp\" is NULL, 'blue', 'yellow')"),
         )
-        symbol.symbolLayer(0).setDataDefinedProperty(
+        fill_layer.setDataDefinedProperty(
             QgsSymbolLayer.PropertyStrokeWidth,
             QgsProperty.fromExpression(f'{base_width} * "Strahler"'),
         )
+
+        border_layer = QgsSimpleFillSymbolLayer()
+        border_layer.setColor(QColor("black"))
+        border_layer.setStrokeWidth(1)
+
+        symbol.appendSymbolLayer(fill_layer)
+        symbol.appendSymbolLayer(border_layer)
+
         renderer = QgsRuleBasedRenderer(symbol)
         layer.setRenderer(renderer)
 
@@ -493,7 +510,11 @@ class SHPFeatureSetDAO:
         new_base = Path(newFileName).stem
 
         # Copy any file with the same name and different extension
-        for ext in [".cpg", ".prj", ".shx", ".qix", ".shp.xml"]:
+        for ext in [".cpg", ".prj", ".shx", ".qix", ".shp.xml", ".shp.gpkg"]:
+            new_file_path = new_path / (new_base + ext)
+            if Path(new_file_path).exists():
+                os.remove(new_file_path)
+
             file = original_path / (base + ext)
             if file.exists():
                 shutil.copy(file, new_path / (new_base + ext))
