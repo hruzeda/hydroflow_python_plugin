@@ -72,16 +72,15 @@ class Classificator:
     def scanPlane(self) -> None:
         scanLine = self.scanner.next()
         if scanLine:
-            previousPoint = scanLine.vertex.x
+            previousCoord = scanLine.vertex.x
 
         while scanLine is not None:
             scanLineVertex = scanLine.vertex
             scanLineCoord = scanLineVertex.x
-            record = scanLine.segmentA
 
-            if self.geo.smallerThan(previousPoint, scanLineCoord):
-                self.processScanPoints(previousPoint)
-                previousPoint = scanLineCoord
+            if self.geo.smallerThan(previousCoord, scanLineCoord):
+                self.processScanPoints(previousCoord)
+                previousCoord = scanLineCoord
 
             # Inserir segmento(s) no ponto de varredura.
             self.scanner.addScanPoint(scanLine)
@@ -89,21 +88,21 @@ class Classificator:
             # Processando o evento da linha de varredura.
             if scanLine.eventType == 0:  # Extremo esquerdo. Segmento entrando.
                 # Inserindo em posição.
-                index_A = self.position.insert(record)
+                index_A = self.position.insert(scanLine.segmentA)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
                 if above:  # Se há segmento acima:
-                    self.evaluateSegments(scanLineVertex, above, record)
+                    self.evaluateSegments(scanLineVertex, above, scanLine.segmentA)
 
                 # Verificando segmento imediatamente abaixo.
                 below = self.position.below(index_A)
                 if below:  # Se há segmento abaixo:
-                    self.evaluateSegments(scanLineVertex, record, below)
+                    self.evaluateSegments(scanLineVertex, scanLine.segmentA, below)
 
             elif scanLine.eventType == 1:
                 # Localizando o segmento em Posicao.
-                index_A = self.position.locate(scanLineCoord, record)
+                index_A = self.position.locate(scanLineCoord, scanLine.segmentA)
 
                 # Verificando segmento imediatamente acima.
                 above = self.position.above(index_A)
@@ -155,10 +154,10 @@ class Classificator:
             scanLine = self.scanner.next()
 
         # Processando os pontos da ultima linha de varredura.
-        self.processScanPoints(previousPoint)
+        self.processScanPoints(previousCoord)
 
     def evaluateSegments(
-        self, point: Vertex, above: Segment, below: Segment
+        self, vertex: Vertex, above: Segment, below: Segment
     ) -> None:
         intersectionPoint = self.geo.intersection(above, below)
 
@@ -166,11 +165,11 @@ class Classificator:
         if intersectionPoint:
             # Selecionando a área de interesse para o ponto de interseção.
             if (
-                intersectionPoint.x >= (point.x - self.geo.tolerance)
-                and intersectionPoint.y >= (point.y - self.geo.tolerance)
+                intersectionPoint.x >= (vertex.x - self.geo.tolerance)
+                and intersectionPoint.y >= (vertex.y - self.geo.tolerance)
             ) or (
-                intersectionPoint.x > (point.x + self.geo.tolerance)
-                and intersectionPoint.y < (point.y - self.geo.tolerance)
+                intersectionPoint.x > (vertex.x + self.geo.tolerance)
+                and intersectionPoint.y < (vertex.y - self.geo.tolerance)
             ):
                 # Separando as interseções do tipo encosta.
                 if not (
