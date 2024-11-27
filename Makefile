@@ -47,9 +47,9 @@ PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
 #	* Mac OS X:
 #	  Library/Application Support/QGIS/QGIS3/profiles/default/python/plugins
 #	* Windows:
-#	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
+#	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins
 
-QGISDIR=
+QGISDIR=/usr/share/qgis/python/plugins
 
 #################################################
 # Normally you would not need to edit below here
@@ -92,7 +92,7 @@ test: compile
 	@echo "e.g. source run-env-linux.sh <path to qgis install>; make test"
 	@echo "----------------------"
 
-deploy: compile
+deploy:
 	@echo
 	@echo "------------------------------------------"
 	@echo "Deploying plugin to your .qgis2 directory."
@@ -160,15 +160,16 @@ lint:
 
 	@echo
 	@echo "------------------------------------"
-	@echo "Running pylint"
+	@echo "Running mypy"
 	@echo "------------------------------------"
-	pylint -rn -sn --ignore-paths test --ignore frmlog_ui.py,hydroflow_dialog_base_ui.py,hydroflow.py,plugin_upload.py,resources_rc.py **/*.py
+	mypy --install-types --non-interactive
+	mypy --config-file pyproject.toml .
 
 	@echo
 	@echo "------------------------------------"
-	@echo "Running mypy"
+	@echo "Running pylint"
 	@echo "------------------------------------"
-	mypy --config-file .\pyproject.toml .
+	pylint -rn -sn --ignore-paths test --ignore frmlog_ui.py,hydroflow_dialog_base_ui.py,hydroflow.py,plugin_upload.py,resources_rc.py **/*.py
 
 format:
 	@echo

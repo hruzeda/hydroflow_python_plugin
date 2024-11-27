@@ -147,7 +147,7 @@ class Ui_HydroflowDialogBase(object):
         self.retranslateUi(HydroflowDialogBase)
         QtCore.QMetaObject.connectSlotsByName(HydroflowDialogBase)
 
-    def retranslateUi(self, HydroflowDialogBase):
+    def retranslateUi(self, HydroflowDialogBase: QtWidgets.QDialog) -> None:
         _translate = QtCore.QCoreApplication.translate
         HydroflowDialogBase.setWindowTitle(
             _translate("HydroflowDialogBase", "Hydroflow")

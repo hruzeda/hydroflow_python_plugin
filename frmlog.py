@@ -31,7 +31,7 @@ from .frmlog_ui import Ui_FrmLog
 from .utils.message import Message
 
 
-class FrmLog(QtWidgets.QDialog, Ui_FrmLog):  # type: ignore
+class FrmLog(QtWidgets.QDialog, Ui_FrmLog):
     def __init__(self, origin: Any, message: Message) -> None:
         """Constructor."""
         super(FrmLog, self).__init__(origin)  # pylint: disable=super-with-arguments,too-many-function-args
@@ -58,11 +58,11 @@ class FrmLog(QtWidgets.QDialog, Ui_FrmLog):  # type: ignore
 
         self.exec_()
 
-    @pyqtSlot()  # type: ignore
+    @pyqtSlot()
     def on_pushButton_2_clicked(self) -> None:
         self.close()
 
-    @pyqtSlot()  # type: ignore
+    @pyqtSlot()
     def on_pushButton_clicked(self) -> None:
         logFileName = QtWidgets.QFileDialog.getSaveFileName(
             self, "Salvar arquivo como", "", "(*.txt)"

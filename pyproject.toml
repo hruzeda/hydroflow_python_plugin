@@ -16,6 +16,8 @@ python_version = "3.12"
 explicit_package_bases = false
 namespace_packages = false
 strict = true
+disallow_subclassing_any = false
+disallow_untyped_decorators = false
 exclude = [
   'frmlog_ui.py',
   'hydroflow_dialog_base_ui.py',
@@ -25,6 +27,6 @@ exclude = [
 ]
 
 [[tool.mypy.overrides]]
-module = ['qgis.*', 'PyQt5.*']
+module = ['qgis.*', 'PyQt6.*']
 ignore_errors = true
 ignore_missing_imports = true

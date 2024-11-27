@@ -30,7 +30,7 @@
    <property name="geometry">
     <rect>
      <x>450</x>
-     <y>270</y>
+     <y>272</y>
      <width>88</width>
      <height>28</height>
     </rect>
@@ -104,7 +104,7 @@
      <x>10</x>
      <y>82</y>
      <width>541</width>
-     <height>171</height>
+     <height>177</height>
     </rect>
    </property>
    <property name="font">
@@ -149,7 +149,7 @@
       <x>10</x>
       <y>140</y>
       <width>161</width>
-      <height>20</height>
+      <height>26</height>
      </rect>
     </property>
     <property name="text">
@@ -190,7 +190,7 @@
      <rect>
       <x>10</x>
       <y>45</y>
-      <width>131</width>
+      <width>151</width>
       <height>18</height>
      </rect>
     </property>
@@ -220,11 +220,14 @@
    <widget class="QCheckBox" name="checkBox_MonitorPoint">
     <property name="geometry">
      <rect>
-      <x>300</x>
-      <y>45</y>
-      <width>221</width>
-      <height>18</height>
+      <x>282</x>
+      <y>40</y>
+      <width>260</width>
+      <height>20</height>
      </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LayoutDirection::LeftToRight</enum>
     </property>
     <property name="text">
      <string>Sugerir trechos para monitoramento</string>
@@ -233,9 +236,9 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>270</x>
+      <x>240</x>
       <y>70</y>
-      <width>251</width>
+      <width>281</width>
       <height>20</height>
      </rect>
     </property>
@@ -258,7 +261,7 @@
       <x>320</x>
       <y>94</y>
       <width>201</width>
-      <height>20</height>
+      <height>26</height>
      </rect>
     </property>
     <property name="text">
