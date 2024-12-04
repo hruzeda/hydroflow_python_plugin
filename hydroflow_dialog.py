@@ -38,7 +38,7 @@ from .params import Params
 class HydroflowDialog(QtWidgets.QDialog, Ui_HydroflowDialogBase):
     def __init__(self, parent: Any = None) -> None:
         """Constructor."""
-        super(HydroflowDialog, self).__init__(parent)   # pylint: disable=super-with-arguments,too-many-function-args
+        super(HydroflowDialog, self).__init__(parent)  # pylint: disable=super-with-arguments,too-many-function-args
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see

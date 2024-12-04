@@ -280,7 +280,7 @@ class Classificator:
     def createNodes(
         self,
         segment: Segment,
-        parent: Segment,
+        destination: Segment,
         sibling_nodes: list[Segment],
         result: int,
     ) -> tuple[int, Optional[Node]]:
@@ -297,9 +297,9 @@ class Classificator:
             # Verificando a condição de interconexão entre árvores.
             loopBasin = False
             basinConnection = False
-            currentFeature = self.drainage.getFeature(segment.featureId)
+            feature = self.drainage.getFeature(segment.featureId)
 
-            if not currentFeature:
+            if not feature:
                 return 0, None
 
             if segment.isMouth:
@@ -307,18 +307,18 @@ class Classificator:
                 # limite da bacia. É o início do processamento de uma bacia!
 
                 # Verificando se a feição da foz já foi processada.
-                if currentFeature.mouthFeatureId < 0:
+                if feature.mouthFeatureId < 0:
                     # Árvore ainda não processada.
-                    currentFeature.mouthFeatureId = currentFeature.originalFeatureId
+                    feature.mouthFeatureId = feature.featureId
                 else:
                     # Árvore já processada. Existe interconexão entre bacias!
                     basinConnection = True
             else:
-                parentFeature = self.drainage.getFeature(parent.featureId)
-                if parentFeature and currentFeature.mouthFeatureId < 0:
-                    currentFeature.mouthFeatureId = parentFeature.originalFeatureId
+                destFeature = self.drainage.getFeature(destination.featureId)
+                if destFeature and feature.mouthFeatureId < 0:
+                    feature.mouthFeatureId = destFeature.featureId
                 else:
-                    # Feição já processada. Existe um loop na árvore!
+                    # Feição já processada! Loop!
                     loopBasin = True
 
             # Verificando a condição de loop na árvore ou interconexão entre árvores.
@@ -326,14 +326,18 @@ class Classificator:
                 node = Node(segment.featureId)
 
                 # Processando o fluxo.
-                if len(currentFeature.segmentsList) > 1:  # Vários segmentos.
+                if len(feature.segmentsList) > 1:  # Vários segmentos.
                     if segment.segmentId == 0:
                         node.flow = 2  # Inverter!
                     else:
                         node.flow = 1  # Manter!
                 else:  # Segmento único.
                     # Verificando se o vértice "a" do segmento encosta no pai.
-                    if segment.a.equalsTo(parent.a) or segment.a.equalsTo(parent.b):
+                    if segment.a.equalsTo(destination.a) or segment.a.equalsTo(
+                        destination.b
+                    ):
+                        # TODO Maybe we should also invert the vertexes here?
+                        # TODO Maybe we should invert the segments here?
                         if segment.a.vertexId == 0:
                             node.flow = 2  # Inverter!
                         else:
@@ -346,8 +350,8 @@ class Classificator:
 
                 # Obtendo os filhos.
                 childSegments = self.topologicalRelations.findChildSegments(
-                    segment.originalFeatureId,
-                    -1 if parent.setId == 1 else parent.originalFeatureId,
+                    segment.featureId,
+                    -1 if destination.setId == 1 else destination.featureId,
                     sibling_nodes,
                 )
 
@@ -365,19 +369,35 @@ class Classificator:
                     if self.params.shreveOrderEnabled:
                         node.shreve = 1
 
-                if len(childSegments) > 2 and self.params.strahlerOrderType == 1:
-                    # Gravando a mensagem de mais de três afluentes no log.
-                    self._log_too_many_children(segment, childSegments)
-
-                # Cadastrando os nós filhos.
-                for child in childSegments:
+                elif len(childSegments) == 1:
+                    # Apenas um filho.
                     result, childNode = self.createNodes(
-                        child, segment, childSegments, result
+                        childSegments[0], segment, childSegments, result
                     )
                     if result == 0 and childNode:
-                        # As regras para a classificação por Strahler e Shreve
-                        # estão no método No::inserirFilhoNo().
                         node.addChild(childNode)
+
+                        if self.params.strahlerOrderType > 0:
+                            node.strahler = childNode.strahler
+
+                        if self.params.shreveOrderEnabled:
+                            node.shreve = childNode.shreve
+
+                else:
+                    if len(childSegments) > 2:
+                        # Gravando a mensagem de mais de três afluentes no log.
+                        self._log_too_many_children(segment, childSegments)
+                        self.params.strahlerOrderType = 2
+
+                    # Cadastrando os nós filhos.
+                    for child in childSegments:
+                        result, childNode = self.createNodes(
+                            child, segment, childSegments, result
+                        )
+                        if result == 0 and childNode:
+                            # As regras para a classificação por Strahler e Shreve
+                            # estão no método No::inserirFilhoNo().
+                            node.addChild(childNode)
 
                 # Gravando classificação.
                 if result == 0:
@@ -388,39 +408,25 @@ class Classificator:
                         shreve=node.shreve,
                     )
             else:  # Feição já processada!
-                msg_1 = (
-                    "Erro! impossível continuar! Estrutura topológica não "
-                    "esperada para hierarquização."
-                )
+                msg_1 = "Erro! impossível continuar! Estrutura topológica não esperada para hierarquização."
                 msg_5 = "Confira a topologia e execute o processamento novamente."
                 if loopBasin:
                     result = 5
-                    msg_2 = " Existem feições em anel (loop)."
-                    msg_4 = (
-                        "Verifique as feições: FID"
-                        + str(segment.originalFeatureId)
-                        + " e FID"
-                        + str(parent.originalFeatureId)
-                        + "."
-                    )
-                    # Gravando o erro no log.
-                    self.log.append(msg_1 + msg_2 + "\n" + msg_4 + "\n\n" + msg_5)
-                else:  # Conexão entre bacias.
-                    result = 6
-                    msg_2 = " Os sistemas de drenagem associados a foz FID"
-                    msg_3 = " e a foz FID"
-                    msg_4 = " estão conectados."
 
                     # Gravando o erro no log.
                     self.log.append(
-                        msg_1
-                        + msg_2
-                        + str(currentFeature.originalFeatureId)
-                        + msg_3
-                        + str(currentFeature.mouthFeatureId)
-                        + msg_4
-                        + "\n\n"
-                        + msg_5
+                        f"{msg_1} Existem feições em anel (loop).\n"
+                        f"Verifique as feições: FID {segment.featureId + 1}"
+                        f" e FID {destination.featureId + 1}.\n\n{msg_5}"
+                    )
+                else:  # Conexão entre bacias.
+                    result = 6
+
+                    # Gravando o erro no log.
+                    self.log.append(
+                        f"{msg_1} Os sistemas de drenagem associados a foz FID "
+                        f"{feature.featureId + 1} e a foz FID "
+                        f"{feature.mouthFeatureId + 1} estão conectados.\n\n{msg_5}"
                     )
 
         return result, node
@@ -431,14 +437,14 @@ class Classificator:
         self.log.append(
             "Aviso! Estrutura topológica não esperada para "
             "hierarquização Strahler. "
-            f"A Feição FID{segment.originalFeatureId} "
+            f"A Feição FID {segment.featureId + 1} "
             "recebe mais de dois afluentes em um mesmo ponto.\n"
             "Os identificadores desses afluentes são:"
         )
 
         # Listando os filhos.
         for i, child in enumerate(childSegments):
-            self.log.append(f"   {i + 1} - FID{child.originalFeatureId}")
+            self.log.append(f"   {i + 1} - FID {child.featureId + 1}")
 
     def evaluateProcessing(self) -> int:
         result = 0
@@ -451,11 +457,11 @@ class Classificator:
                 or (self.params.shreveOrderEnabled and feature.shreve == 0)
             ):
                 self.log.append(
-                    f"Aviso: a feição FID{feature.originalFeatureId} "
+                    f"Aviso: a feição FID {feature.featureId + 1} "
                     "não foi processada. Confira a topologia da rede de drenagem."
                 )
                 self.drainage.obs.set_value(
-                    feature.originalFeatureId, "Feicao nao processada."
+                    feature.featureId + 1, "Feicao nao processada."
                 )
                 feature.hasObservation = True
                 result = 1

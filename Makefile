@@ -68,7 +68,7 @@ default:
 	@echo You can install pb_tool using: pip install pb_tool
 	@echo See https://g-sherman.github.io/plugin_build_tool/ for info.
 
-compile: $(COMPILED_RESOURCE_FILES)
+compile:
 	@echo
 	@echo "------------------------------------"
 	@echo "Compiling UI and resource files"

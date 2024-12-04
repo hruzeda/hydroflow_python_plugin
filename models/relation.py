@@ -42,6 +42,10 @@ class Relation:
         new_item = RelationItem(source, destination, relation_type)
         target_list = self.items if relation_type == 0 else self.err
 
+        if len(target_list) == 0:
+            target_list.append(RelationItem(source, destination, relation_type))
+            return
+
         start = 0
         end = len(target_list) - 1
         while start <= end:
@@ -58,6 +62,7 @@ class Relation:
                 else:
                     target_list.insert(0, new_item)
                     return
+
             elif comp > 0:
                 if middle == len(target_list) - 1:
                     target_list.append(new_item)
@@ -66,6 +71,7 @@ class Relation:
                     target_list.insert(middle, new_item)
                     return
                 start = middle + 1
+
             else:
                 return
 
@@ -100,7 +106,7 @@ class Relation:
         2 - Intercepta
         """
         # Garantindo que o FID do primeiro segmento seja menor que o FID do segundo.
-        if destination.originalFeatureId < source.originalFeatureId:
+        if destination.featureId < source.featureId:
             source, destination = destination, source
 
         # Verificando se é relação entre foz e limite.
@@ -110,67 +116,51 @@ class Relation:
 
         # Verificando se os segmenos são de feições diferentes da bacia.
         elif (
-            source.originalFeatureId != destination.originalFeatureId
+            source.featureId != destination.featureId
             and source.setId == 0
             and destination.setId == 0
         ):
-            if relationType == 0:  # Escosta.
-                if not self.items:
-                    self.items.append(
-                        RelationItem(source, destination, relationType)
-                    )
-                else:
-                    self.insert(source, destination, relationType)
-            else:  # Tipo de evento errado. Incluindo na lista de erros.
-                if not self.err:
-                    self.err.append(RelationItem(source, destination, relationType))
-                else:
-                    self.insert(source, destination, relationType)
+            self.insert(source, destination, relationType)
         # Os segmentos da orígem e destino são da mesma feição. Não gravar!
 
     def findChildSegments(
-        self, featureId: int, parentFeatureId: int, siblings: list[Segment]
+        self, featureId: int, destFeatureId: int, siblings: list[Segment]
     ) -> list[Segment]:
         result = []
-
         # Obtendo o índice primário.
-        primaryIndex = self.findPrimaryIndex(featureId)
+        primaryPos = self.findPrimaryIndex(featureId)
 
-        if primaryIndex >= 0:
+        if primaryPos >= 0:
             done = False
-            while not done and primaryIndex < len(self.index):
+            while not done and primaryPos < len(self.index):
                 # Obtendo o índice do evento.
-                primaryItem = self.index[primaryIndex]
+                item = self.index[primaryPos]
 
-                if primaryItem.featureId == featureId:
+                if item.featureId == featureId:
                     # Lendo evento.
-                    eventItem = self.items[primaryItem.value]
+                    eventItem = self.items[item.value]
 
                     relatedSegment = None
                     if (
-                        eventItem.source.originalFeatureId == featureId
-                        and eventItem.destination.originalFeatureId
-                        != parentFeatureId
+                        eventItem.source.featureId == featureId
+                        and eventItem.destination.featureId != destFeatureId
                     ):
                         relatedSegment = eventItem.destination
                     elif (
-                        eventItem.destination.originalFeatureId == featureId
-                        and eventItem.source.originalFeatureId != parentFeatureId
+                        eventItem.destination.featureId == featureId
+                        and eventItem.source.featureId != destFeatureId
                     ):
                         relatedSegment = eventItem.source
 
                     if relatedSegment:
                         isChild = True
                         for childSegment in siblings:
-                            if (
-                                relatedSegment.originalFeatureId
-                                == childSegment.originalFeatureId
-                            ):
+                            if relatedSegment.featureId == childSegment.featureId:
                                 isChild = False
                         if isChild:
                             result.append(relatedSegment)
 
-                    primaryIndex += 1
+                    primaryPos += 1
                 else:
                     done = True
 
@@ -179,35 +169,39 @@ class Relation:
     def comparePosition(self, a: RelationItem, b: RelationItem) -> int:
         if all(
             [
-                a.source.originalFeatureId == b.source.originalFeatureId,
-                a.destination.originalFeatureId == b.destination.originalFeatureId,
+                a.source.featureId == b.source.featureId,
+                a.destination.featureId == b.destination.featureId,
                 a.relationType == b.relationType,
             ]
         ):
             return 0
         if any(
             [
-                a.source.originalFeatureId < b.source.originalFeatureId,
-                a.source.originalFeatureId == b.source.originalFeatureId
-                and a.destination.originalFeatureId
-                < b.destination.originalFeatureId,
-                a.source.originalFeatureId == b.source.originalFeatureId
-                and a.destination.originalFeatureId
-                == b.destination.originalFeatureId
-                and a.relationType < b.relationType,
+                a.source.featureId < b.source.featureId,
+                (
+                    a.source.featureId == b.source.featureId
+                    and a.destination.featureId < b.destination.featureId
+                ),
+                (
+                    a.source.featureId == b.source.featureId
+                    and a.destination.featureId == b.destination.featureId
+                    and a.relationType < b.relationType
+                ),
             ]
         ):
             return -1
         if any(
             [
-                a.source.originalFeatureId > b.source.originalFeatureId,
-                a.source.originalFeatureId == b.source.originalFeatureId
-                and a.destination.originalFeatureId
-                > b.destination.originalFeatureId,
-                a.source.originalFeatureId == b.source.originalFeatureId
-                and a.destination.originalFeatureId
-                == b.destination.originalFeatureId
-                and a.relationType > b.relationType,
+                a.source.featureId > b.source.featureId,
+                (
+                    a.source.featureId == b.source.featureId
+                    and a.destination.featureId > b.destination.featureId
+                ),
+                (
+                    a.source.featureId == b.source.featureId
+                    and a.destination.featureId == b.destination.featureId
+                    and a.relationType > b.relationType
+                ),
             ]
         ):
             return 1
@@ -221,9 +215,9 @@ class Relation:
 
     def compareIndexItems(self, a: IndexItem, b: IndexItem) -> int:
         return (
-            b.value - a.value
+            a.value - b.value
             if a.featureId == b.featureId
-            else b.featureId - a.featureId
+            else a.featureId - b.featureId
         )
 
     def buildIndexes(self) -> None:
@@ -233,8 +227,8 @@ class Relation:
         eventItem = None
         for i, eventItem in enumerate(self.items):
             # Verificando se são ocorrências de bacia.
-            self.index.append(IndexItem(eventItem.source.originalFeatureId, i))
-            self.index.append(IndexItem(eventItem.destination.originalFeatureId, i))
+            self.index.append(IndexItem(eventItem.source.featureId, i))
+            self.index.append(IndexItem(eventItem.destination.featureId, i))
 
         # Ordenando o índice principal.
         self.index.sort(key=functools.cmp_to_key(self.compareIndexItems))
@@ -259,13 +253,13 @@ class Relation:
         if self.err:
             for item in self.err:
                 log.append(
-                    f"    - FID{str(item.source.originalFeatureId)}"
+                    f"    - FID {str(item.source.featureId + 1)}"
                     + (
-                        " toca em FID"
+                        " toca em FID "
                         if item.relationType == 1
-                        else " intercepta FID"
+                        else " intercepta FID "
                     )
-                    + f"{item.destination.originalFeatureId}"
+                    + f"{item.destination.featureId + 1}"
                 )
             log.append(f"    Total de relações: {str(len(self.err))}.\n")
             log.append(

@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Optional
 
-from PyQt5.QtCore import QVariant
+from PyQt5.QtCore import QMetaType
 from qgis.core import (
     QgsFeature,
     QgsFeatureRequest,
@@ -41,9 +41,7 @@ from ..utils.message import Message
 class SHPFeatureSetDAO:
     def __init__(self, tolerance: Decimal = Decimal(0)) -> None:
         self.tolerance = tolerance
-        self.msg_1 = "Feição com partes multiplas. Veja: "
-        self.msg_2 = "Parte da feição FID "
-        self.msg_3 = "Feição não processada."
+        self.error_msg = "Feição não processada."
 
     # Tipos: 0 - bacia; 1 - limite.
     def load_feature_set(
@@ -52,7 +50,6 @@ class SHPFeatureSetDAO:
         # Lendo o registro
         layer = QgsVectorLayer(filename, basename, "ogr")
         if not layer.isValid():
-            print("Failed to load layer!")
             return None
 
         # Initialize variables
@@ -60,27 +57,25 @@ class SHPFeatureSetDAO:
         feature_set = FeatureSet(shape_type, filename, layer.wkbType(), obs, layer)
 
         # Montando as feições
-        new_feature_id = layer.featureCount()
-        for feature_id, qgs_feature in enumerate(
-            layer.getFeatures(QgsFeatureRequest())
-        ):
+        feature_id = 0
+        for qgs_feature in layer.getFeatures(QgsFeatureRequest()):
             geometry = qgs_feature.geometry()
             if geometry.isMultipart():
-                self._parse_multi_part_feature(
+                feature_id = self._parse_multi_part_feature(
                     feature_id,
                     feature_set,
                     qgs_feature,
                     geometry,
                     layer,
-                    new_feature_id,
                     shape_type,
                     obs,
                 )
 
             else:
                 self._parse_single_part_feature(
-                    feature_set, geometry, shape_type, obs
+                    feature_id, feature_set, geometry, shape_type, obs
                 )
+                feature_id += 1
 
         # Cadastrando demais atributos da figura.
         feature_set.obs = obs
@@ -94,21 +89,18 @@ class SHPFeatureSetDAO:
         qgs_feature: QgsFeature,
         geometry: QgsGeometry,
         layer: QgsVectorLayer,
-        new_feature_id: int,
         shape_type: int,
         obs: Observation,
-    ) -> None:
+    ) -> int:
         # Lendo as partes.
         parts = self._get_raw_parts(geometry)
         for part_id, rings_or_lines in enumerate(parts):
-            new_feature = part_id > 0
             feature = Feature(
                 geometry=QgsGeometry.fromMultiPolylineXY(rings_or_lines)
                 if isinstance(rings_or_lines[0], list)
                 else QgsGeometry.fromPolylineXY(rings_or_lines),
-                featureId=new_feature_id if new_feature else feature_id,
+                featureId=feature_id + part_id,
                 setId=shape_type,
-                originalFeatureId=feature_id,
                 featureType=geometry.wkbType(),
             )
 
@@ -121,24 +113,25 @@ class SHPFeatureSetDAO:
             feature.vertexList = vertex_list
             feature.segmentsList = segments_list
 
-            if not new_feature:  # Feição original.
+            if part_id == 0:  # Feição original.
                 if part_id < len(parts) - 1:
                     feature.hasObservation = True
-                    obs.set_value(feature_id, self.msg_1)
+                    obs.set_value(feature_id, "Feição com partes multiplas. Veja: ")
 
                 feature_set.featuresList.append(feature)
             else:  # Adicionar novo registro no ShapeFile.
                 feature.hasObservation = True
-                obs.set_value(part_id, self.msg_2 + str(feature_id) + ".")
+                obs.set_value(part_id, f"Parte da feição FID {feature_id + 1}.")
 
                 feature_set.newFeaturesList.append(feature)
                 feature_set.newFeaturesAttributes.append(
                     NewFeatureAttributes(
-                        featureId=new_feature_id,
+                        featureId=feature_id + part_id,
                         attributes=self.read_attributes(layer, qgs_feature.id()),
                     )
                 )
-                new_feature_id += 1
+
+        return feature_id + len(parts)
 
     def _get_raw_parts(self, geometry: QgsGeometry) -> list[Any]:
         if (
@@ -191,7 +184,6 @@ class SHPFeatureSetDAO:
                 Segment(
                     segmentId=len(segments_list),
                     featureId=feature.featureId,
-                    originalFeatureId=feature.originalFeatureId,
                     setId=shape_type,
                     a=start,
                     b=end,
@@ -202,6 +194,7 @@ class SHPFeatureSetDAO:
 
     def _parse_single_part_feature(
         self,
+        feature_id: int,
         feature_set: FeatureSet,
         geometry: QgsGeometry,
         shape_type: int,
@@ -215,9 +208,8 @@ class SHPFeatureSetDAO:
         if len(vertex_list) == 1:
             feature = Feature(
                 geometry,
-                featureId=0,
+                featureId=feature_id,
                 setId=shape_type,
-                originalFeatureId=0,
                 featureType=geometry.wkbType(),
                 vertexList=vertex_list,
             )
@@ -226,7 +218,6 @@ class SHPFeatureSetDAO:
                 Segment(  # Montando um segmento degenerado!
                     segmentId=0,
                     featureId=0,
-                    originalFeatureId=0,
                     setId=shape_type,
                     a=vertex_list[0],
                     b=vertex_list[0],
@@ -236,21 +227,20 @@ class SHPFeatureSetDAO:
             if shape_type == 0:  # É bacia. Não processar o elemento!
                 feature.process = False
                 feature.hasObservation = True
-                obs.set_value(0, self.msg_3)
+                obs.set_value(0, self.error_msg)
 
         else:  # Não tem vertices! Situação de erro do ShapeFile.
             feature = Feature(
                 geometry,
-                featureId=0,
+                featureId=feature_id,
                 setId=shape_type,
-                originalFeatureId=0,
                 featureType=geometry.wkbType(),
                 vertexList=vertex_list,
             )
             feature.process = False
             feature.hasObservation = True
 
-            obs.set_value(0, self.msg_3)
+            obs.set_value(0, self.error_msg)
 
         feature_set.featuresList.append(feature)
 
@@ -267,15 +257,15 @@ class SHPFeatureSetDAO:
             value = feature[field_name]
 
             # Convert to string
-            if field_type == QVariant.String:
+            if field_type == QMetaType.Type.QString:
                 value = str(value)
-            elif field_type == QVariant.Int:
+            elif field_type == QMetaType.Type.Int:
                 value = str(int(value))
-            elif field_type == QVariant.Double:
+            elif field_type == QMetaType.Type.Double:
                 value = str(Decimal(value))
-            elif field_type == QVariant.Bool:
+            elif field_type == QMetaType.Type.Bool:
                 value = str(bool(value))
-            elif field_type == QVariant.Date:
+            elif field_type == QMetaType.Type.QDate:
                 value = value.toString("yyyy-MM-dd")
 
             attributes.append(
@@ -320,19 +310,21 @@ class SHPFeatureSetDAO:
     ) -> QgsFields:
         fields = QgsFields(qgs_layer.fields())
 
+        fields.append(QgsField("FID", QMetaType.Type.Int))
+        fields.append(QgsField("Fluxo", QMetaType.Type.Int))
+
         if params.strahlerOrderType > 0:
-            fields.append(QgsField("Strahler", QVariant.Int))
+            fields.append(QgsField("Strahler", QMetaType.Type.Int))
 
         if params.shreveOrderEnabled:
-            fields.append(QgsField("Shreve", QVariant.Int))
+            fields.append(QgsField("Shreve", QMetaType.Type.Int))
 
-        fields.append(QgsField("Sharp", QVariant.Double))
+        fields.append(QgsField("Sharp", QMetaType.Type.Double))
 
         if has_observation:
             obs_field_name = "Obs:"
-            fields.append(QgsField(obs_field_name, QVariant.String, len=80))
+            fields.append(QgsField(obs_field_name, QMetaType.Type.QString, len=80))
 
-        fields.append(QgsField("Fluxo", QVariant.Int))
         return fields
 
     def copy_feature(
@@ -358,6 +350,8 @@ class SHPFeatureSetDAO:
         else:
             for i, attribute in enumerate(qgs_feature.attributes()):
                 copy.setAttribute(i, attribute)
+
+        copy.setAttribute("FID", featureId + 1)
 
         # Set the fluxo attribute
         copy.setAttribute("Fluxo", feature.flow)
@@ -413,19 +407,18 @@ class SHPFeatureSetDAO:
             )
             featureCount += 1
 
-            # Gravando os novos registros criados.
-            for new_feature in feature_set.newFeaturesList:
-                if new_feature.originalFeatureId == feature.featureId:
-                    self.copy_feature(
-                        featureCount,
-                        new_feature,
-                        feature_set.raw.getFeature(feature.originalFeatureId),
-                        writer,
-                        fields,
-                        params,
-                        feature_set.getNewFeatureAttributes(feature.featureId),
-                    )
-                    featureCount += 1
+        # Gravando os novos registros criados.
+        for new_feature in feature_set.newFeaturesList:
+            self.copy_feature(
+                featureCount,
+                new_feature,
+                feature_set.raw.getFeature(new_feature.featureId),
+                writer,
+                fields,
+                params,
+                feature_set.getNewFeatureAttributes(new_feature.featureId),
+            )
+            featureCount += 1
 
         del writer
 

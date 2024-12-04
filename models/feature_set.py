@@ -1,8 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from qgis.core import QgsVectorLayer
-from qgis.gui import Qgis
+from qgis.core import Qgis, QgsVectorLayer
 
 from .attribute import Attribute
 from .feature import Feature

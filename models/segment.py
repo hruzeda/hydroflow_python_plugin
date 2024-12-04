@@ -8,14 +8,12 @@ class Segment:
         self,
         segmentId: int,
         featureId: int,
-        originalFeatureId: int,
         setId: int,
         a: Vertex,
         b: Vertex,
     ):
         self.segmentId = segmentId
         self.featureId = featureId
-        self.originalFeatureId = originalFeatureId
         self.setId = setId
         self.a = a
         self.b = b
@@ -51,9 +49,9 @@ class Segment:
             return -1
         if self.setId > other.setId:
             return 1
-        if self.originalFeatureId < other.originalFeatureId:
+        if self.featureId < other.featureId:
             return -1
-        if self.originalFeatureId > other.originalFeatureId:
+        if self.featureId > other.featureId:
             return 1
         if self.segmentId < other.segmentId:
             return -1
@@ -63,8 +61,7 @@ class Segment:
 
     def __str__(self) -> str:
         return (
-            f"Segment {self.segmentId} ({self.featureId})\n"
-            f"Original FID: {self.originalFeatureId}\n"
+            f"Segment {self.segmentId} ({self.featureId + 1})\n"
             f"a: {self.a}\n"
             f"b: {self.b}"
         )

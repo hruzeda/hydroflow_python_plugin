@@ -13,7 +13,6 @@ class Feature:
         geometry: QgsGeometry,
         featureId: int = -1,
         setId: int = -1,
-        originalFeatureId: int = -1,
         mouthFeatureId: int = -1,
         featureType: int = 0,
         flow: int = 0,
@@ -27,7 +26,6 @@ class Feature:
         self.geometry = geometry
         self.featureId = featureId
         self.setId = setId
-        self.originalFeatureId = originalFeatureId
         self.mouthFeatureId = mouthFeatureId
         self.featureType = featureType
         self.flow = flow
@@ -41,8 +39,7 @@ class Feature:
 
     def __str__(self) -> str:
         return (
-            f"Feature {self.featureId} ({self.featureType}), "
-            f"Original FID: {self.originalFeatureId}, "
+            f"Feature {self.featureId + 1} ({self.featureType}), "
             f"Flow: {self.flow}, "
             f"Strahler: {self.strahler}, "
             f"Shreve: {self.shreve}, "
